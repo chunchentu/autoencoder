@@ -142,7 +142,7 @@ def main(args):
 
     print('Start training autoencoder')
     train(data, compressMode=args['compress_mode'], batch_size=args['batch_size'], epochs=args['epochs'],
-          saveModelFileName=args['save_model'], ckptFileName=args['save_ckpts'])
+          saveModelFileName=args['save_model'], ckptFileName=args['save_ckpt'])
 
 
 if __name__ == "__main__":
