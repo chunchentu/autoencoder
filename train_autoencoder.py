@@ -145,12 +145,15 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset", choices=["mnist", "cifar10"], default="mnist", help="the dataset to train")
     parser.add_argument("--save_model", default="model/trainedModel", help="path to save trained model")
     parser.add_argument("--save_ckpts", default="model/ckpt", help="path to save checkpoint file")
-    parser.add_argument("--compress_mode", choices=[1, 2], default=1, help="the compress mode, 1:25% 2:6.25%")
+    parser.add_argument("--compress_mode", type=int, choices=[1, 2], default=1, help="the compress mode, 1:25% 2:6.25%")
     parser.add_argument("--batch_size", default=1000, type=int, help="the batch size when training autoencoder")
     parser.add_argument("--epochs", default=1000, type=int, help="the number of training epochs")
     parser.add_argument("--seed", type=int, default=9487)
 
     args = vars(parser.parse_args())
+    if not os.path.isdir('model'):
+        print('Folder for saving models does not exist ')
+        os.makedirs('model')
 
     # setup random seed
     random.seed(args['seed'])
