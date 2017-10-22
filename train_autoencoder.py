@@ -162,7 +162,7 @@ if __name__ == "__main__":
         os.makedirs('model')
 
     args['save_model'] = 'model/' + args['save_model']
-    args['save_ckpt'] = 'model/' + args['ckpt']
+    args['save_ckpt'] = 'model/' + args['save_ckpt']
     # setup random seed
     random.seed(args['seed'])
     np.random.seed(args['seed'])
