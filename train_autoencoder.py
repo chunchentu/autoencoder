@@ -150,7 +150,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", choices=["mnist", "cifar10"], default="mnist", help="the dataset to train")
     parser.add_argument("--save_model", default="trainedModel", help="file name to save trained model under model folder")
-    parser.add_argument("--save_ckpts", default="ckpt", help="file name to save checkpoint file under model folder")
+    parser.add_argument("--save_ckpt", default="ckpt", help="file name to save checkpoint file under model folder")
     parser.add_argument("--compress_mode", type=int, choices=[1, 2], default=1, help="the compress mode, 1:25% 2:6.25%")
     parser.add_argument("--batch_size", default=1000, type=int, help="the batch size when training autoencoder")
     parser.add_argument("--epochs", default=1000, type=int, help="the number of training epochs")
