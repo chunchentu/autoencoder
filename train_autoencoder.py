@@ -102,6 +102,11 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveModelFileName=
     decode_model.add(Convolution2D(1, 5, strides=1, padding='same', data_format='channels_first'))
 
 
+    # print model information
+    print('Encoder model:')
+    encode_model.summary()
+
+    print('Decoder model:')
     decode_model.summary()
 
     if os.path.exists(saveModelFileName):
@@ -122,8 +127,8 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveModelFileName=
               callbacks = [checkpointer])
     decode_model.save(saveModelFileName)
 
-    print("Checkpoint is saved to %s\n".format(ckptFileName))
-    print("Model is saved to %s\n".format(saveModelFileName))
+    print("Checkpoint is saved to {}\n".format(ckptFileName))
+    print("Model is saved to {}\n".format(saveModelFileName))
 
 
 def main(args):
@@ -144,8 +149,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", choices=["mnist", "cifar10"], default="mnist", help="the dataset to train")
-    parser.add_argument("--save_model", default="model/trainedModel", help="path to save trained model")
-    parser.add_argument("--save_ckpts", default="model/ckpt", help="path to save checkpoint file")
+    parser.add_argument("--save_model", default="trainedModel", help="file name to save trained model under model folder")
+    parser.add_argument("--save_ckpts", default="ckpt", help="file name to save checkpoint file under model folder")
     parser.add_argument("--compress_mode", type=int, choices=[1, 2], default=1, help="the compress mode, 1:25% 2:6.25%")
     parser.add_argument("--batch_size", default=1000, type=int, help="the batch size when training autoencoder")
     parser.add_argument("--epochs", default=1000, type=int, help="the number of training epochs")
@@ -156,6 +161,8 @@ if __name__ == "__main__":
         print('Folder for saving models does not exist ')
         os.makedirs('model')
 
+    args['save_model'] = 'model/' + args['save_model']
+    args['save_ckpt'] = 'model/' + args['ckpt']
     # setup random seed
     random.seed(args['seed'])
     np.random.seed(args['seed'])
