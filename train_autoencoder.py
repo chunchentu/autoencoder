@@ -8,7 +8,7 @@ from keras.optimizers import SGD
 from setup_mnist import MNIST
 from setup_cifar import CIFAR
 
-def train(data, compressMode=1, batch_size=1000, epochs=1000, saveModelFileName=None, ckptFileName=None):
+def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=None):
 
     """Train autoencoder
 
@@ -20,120 +20,144 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveModelFileName=
     """
 
     # data.train_data may have different definition of the shape, need to check
-    # for MNIST is fine so far
-    trainNum, imgH, imgW, _ = data.train_data.shape
+    # for MNIST and CIFAR
 
+    trainNum, imgH, imgW, numChannels = data.train_data.shape
 
-    x_train = data.train_data.reshape(-1, 1, imgH, imgW)
+    x_train = data.train_data
     y_train = x_train
 
-    x_test = data.test_data.reshape(-1, 1, imgH, imgW)
+    x_test = data.test_data
     y_test = x_test
 
+    print("Shape of training data:{}".format(x_train.shape))
+    print("Shape of testing data:{}".format(x_test.shape))
+
+
     # build a neural network from the 1st layer to the last layer
-    encode_model = Sequential()
+    encoder_model = Sequential()
 
     # Conv layer output shape (16, imgH, imgW)
-    encode_model.add(Convolution2D(
-        batch_input_shape=(None, 1, imgH, imgW),
+    encoder_model.add(Convolution2D(
+        batch_input_shape=(None, imgH, imgW, numChannels),
         filters=16,
         kernel_size=5,
         strides=1,
         padding='same',     # Padding method
-        data_format='channels_first',
+        data_format='channels_last',
     ))
-    encode_model.add(Activation('relu'))
+    encoder_model.add(Activation('relu'))
 
     # Pooling layer (max pooling) output shape (16, imgH/2, imgW/2)
-    encode_model.add(MaxPooling2D(
+    encoder_model.add(MaxPooling2D(
         pool_size=2,
         strides=2,
         padding='same',    # Padding method
-        data_format='channels_first',
+        data_format='channels_last',
     ))
 
     # Conv layer output shape (1, imgH/2, imgW/2)
-    encode_model.add(Convolution2D(1, 5, strides=1, padding='same', data_format='channels_first'))
-    encode_model.add(Activation('relu'))
+    encoder_model.add(Convolution2D(1, 5, strides=1, padding='same', data_format='channels_last'))
+    encoder_model.add(Activation('relu'))
 
     if compressMode == 2:
         # Pooling layer (max pooling) output shape (16, imgH/4, imgW/4)
-        encode_model.add(MaxPooling2D(
+        encoder_model.add(MaxPooling2D(
             pool_size=2,
             strides=2,
             padding='same',  # Padding method
-            data_format='channels_first',
+            data_format='channels_last',
         ))
 
         # Conv layer 3 output shape (1, imgH/4, imgW/4)
-        encode_model.add(Convolution2D(1, 5, strides=1, padding='same', data_format='channels_first'))
-        encode_model.add(Activation('relu'))
+        encoder_model.add(Convolution2D(1, 5, strides=1, padding='same', data_format='channels_last'))
+        encoder_model.add(Activation('relu'))
 
 
     # end of encoding
 
 
     # start of decoding
-    decode_model = Sequential()
+    decoder_model = Sequential()
 
-    decode_model.add(encode_model)
+    decoder_model.add(encoder_model)
 
     if compressMode == 2:
         # Conv layer output shape (16, imgH/4, imgW/4)
-        decode_model.add(Convolution2D(16, 5, strides=1, padding='same', data_format='channels_first'))
-        decode_model.add(Activation('relu'))
+        decoder_model.add(Convolution2D(16, 5, strides=1, padding='same', data_format='channels_last'))
+        decoder_model.add(Activation('relu'))
 
         # Upsampling layer  output shape (16, imgH/2, imgW/2)
-        decode_model.add(UpSampling2D((2, 2), data_format='channels_first'))
+        decoder_model.add(UpSampling2D((2, 2), data_format='channels_last'))
 
     # Conv layer output shape (16, imgH/2, imgW/2)
-    decode_model.add(Convolution2D(16, 5, strides=1, padding='same', data_format='channels_first'))
-    decode_model.add(Activation('relu'))
+    decoder_model.add(Convolution2D(16, 5, strides=1, padding='same', data_format='channels_last'))
+    decoder_model.add(Activation('relu'))
 
     # Upsampling layer output shape (16, imgH, imgW)
-    decode_model.add(UpSampling2D((2, 2), data_format='channels_first'))
+    decoder_model.add(UpSampling2D((2, 2), data_format='channels_last'))
 
     # Conv layer output shape (16, imgH, imgW)
-    decode_model.add(Convolution2D(16, 5, strides=1, padding='same', data_format='channels_first'))
-    decode_model.add(Activation('relu'))
+    decoder_model.add(Convolution2D(16, 5, strides=1, padding='same', data_format='channels_last'))
+    decoder_model.add(Activation('relu'))
 
 
     # Conv layer output shape (1, imgH, v)
-    decode_model.add(Convolution2D(1, 5, strides=1, padding='same', data_format='channels_first'))
+    decoder_model.add(Convolution2D(numChannels, 5, strides=1, padding='same', data_format='channels_last'))
 
 
     # print model information
     print('Encoder model:')
-    encode_model.summary()
+    encoder_model.summary()
 
     print('Decoder model:')
-    decode_model.summary()
+    decoder_model.summary()
 
-    if os.path.exists(saveModelFileName):
-        decode_model.load_weights(saveModelFileName)
+    ckptFileName = saveFilePrefix + "ckpt"
+
+    encoder_model_filename = saveFilePrefix + "encoder.json"
+    decoder_model_filename = saveFilePrefix + "encoder.json"
+    encoder_weight_filename = saveFilePrefix + "encoder.h5"
+    decoder_weight_filename = saveFilePrefix + "decoder.h5"
+    if os.path.exists(decoder_weight_filename):
+        decoder_model.load_weights(decoder_weight_filename)
 
     sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-    decode_model.compile(loss='mse', optimizer=sgd)
+    decoder_model.compile(loss='mse', optimizer=sgd)
 
-    if ckptFileName is None:
-        ckptFileName = 'ckpt'
     checkpointer = ModelCheckpoint(filepath=ckptFileName, verbose=1, save_best_only=True)
 
-    decode_model.fit(x_train, y_train,
+    decoder_model.fit(x_train, y_train,
               batch_size=batch_size,
               validation_data=(x_test, y_test),
               epochs=epochs,
               shuffle=True,
               callbacks = [checkpointer])
-    decode_model.save(saveModelFileName)
 
     print("Checkpoint is saved to {}\n".format(ckptFileName))
-    print("Model is saved to {}\n".format(saveModelFileName))
+
+
+    
+    model_json = encoder_model.to_json()
+    with open(encoder_model_filename, "w") as json_file:
+        json_file.write(model_json)
+    print("Encoder specification is saved to {}".format(encoder_model_filename))
+
+    encoder_model.save_weights(encoder_weight_filename)
+    print("Encoder weight is saved to {}\n".format(encoder_weight_filename))
+
+    model_json = decoder_model.to_json()
+    with open(decoder_model_filename, "w") as json_file:
+        json_file.write(model_json)
+    print("Decoder specification is saved to {}".format(decoder_model_filename))
+
+    decoder_model.save_weights(decoder_weight_filename)
+    print("Decoder weight is saved to {}\n".format(decoder_weight_filename))
 
 
 def main(args):
     # load data
-    print('Loading model', args['dataset'])
+    print('Loading data', args['dataset'])
     if args['dataset'] == "mnist":
         data = MNIST()
     elif args['dataset'] == "cifar10":
@@ -142,15 +166,14 @@ def main(args):
 
     print('Start training autoencoder')
     train(data, compressMode=args['compress_mode'], batch_size=args['batch_size'], epochs=args['epochs'],
-          saveModelFileName=args['save_model'], ckptFileName=args['save_ckpt'])
+          saveFilePrefix=args['save_prefix'])
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", choices=["mnist", "cifar10"], default="mnist", help="the dataset to train")
-    parser.add_argument("--save_model", default="trainedModel", help="file name to save trained model under model folder")
-    parser.add_argument("--save_ckpt", default="ckpt", help="file name to save checkpoint file under model folder")
+    parser.add_argument("--save_prefix", default="codec_", help="prefix of file name to save trained model/weights under model folder")
     parser.add_argument("--compress_mode", type=int, choices=[1, 2], default=1, help="the compress mode, 1:25% 2:6.25%")
     parser.add_argument("--batch_size", default=1000, type=int, help="the batch size when training autoencoder")
     parser.add_argument("--epochs", default=1000, type=int, help="the number of training epochs")
@@ -158,11 +181,10 @@ if __name__ == "__main__":
 
     args = vars(parser.parse_args())
     if not os.path.isdir('model'):
-        print('Folder for saving models does not exist ')
+        print('Folder for saving models does not exist. The folder is created. ')
         os.makedirs('model')
 
-    args['save_model'] = 'model/' + args['save_model']
-    args['save_ckpt'] = 'model/' + args['save_ckpt']
+    args['save_prefix'] = 'model/' + args['save_prefix'] + "_" + str(args['compress_mode']) + "_"
     # setup random seed
     random.seed(args['seed'])
     np.random.seed(args['seed'])
