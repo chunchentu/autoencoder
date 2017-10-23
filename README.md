@@ -31,3 +31,7 @@ Several arguments:
 
 
 
+# Update history
+
+- Update 10/23/2017: Change the order of dimensions( previously channel first, changed to channel last). Fix reshaping bugs for multi-channel data. Change the function arguments
+

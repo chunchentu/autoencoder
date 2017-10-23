@@ -116,7 +116,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     ckptFileName = saveFilePrefix + "ckpt"
 
     encoder_model_filename = saveFilePrefix + "encoder.json"
-    decoder_model_filename = saveFilePrefix + "encoder.json"
+    decoder_model_filename = saveFilePrefix + "decoder.json"
     encoder_weight_filename = saveFilePrefix + "encoder.h5"
     decoder_weight_filename = saveFilePrefix + "decoder.h5"
     if os.path.exists(decoder_weight_filename):
