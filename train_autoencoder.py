@@ -37,18 +37,22 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     # build a neural network from the 1st layer to the last layer
     encoder_model = Sequential()
 
-    # Conv layer output shape (16, imgH, imgW)
+    # Conv layer output shape (imgH, imgW, 16)
     encoder_model.add(Convolution2D(
         batch_input_shape=(None, imgH, imgW, numChannels),
         filters=16,
-        kernel_size=5,
+        kernel_size=3,
         strides=1,
         padding='same',     # Padding method
         data_format='channels_last',
     ))
     encoder_model.add(Activation('relu'))
 
-    # Pooling layer (max pooling) output shape (16, imgH/2, imgW/2)
+    # Conv layer output shape (imgH, imgW, 16)
+    encoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
+    encoder_model.add(Activation('relu'))
+
+    # Pooling layer (max pooling) output shape (imgH/2, imgW/2, 16)
     encoder_model.add(MaxPooling2D(
         pool_size=2,
         strides=2,
@@ -56,12 +60,12 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
         data_format='channels_last',
     ))
 
-    # Conv layer output shape (1, imgH/2, imgW/2)
-    encoder_model.add(Convolution2D(1, 5, strides=1, padding='same', data_format='channels_last'))
+    # Conv layer output shape (imgH/2, imgW/2, numChannels)
+    encoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
     encoder_model.add(Activation('relu'))
 
     if compressMode == 2:
-        # Pooling layer (max pooling) output shape (16, imgH/4, imgW/4)
+        # Pooling layer (max pooling) output shape (imgH/4, imgW/4, numChannels)
         encoder_model.add(MaxPooling2D(
             pool_size=2,
             strides=2,
@@ -69,8 +73,8 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
             data_format='channels_last',
         ))
 
-        # Conv layer 3 output shape (1, imgH/4, imgW/4)
-        encoder_model.add(Convolution2D(1, 5, strides=1, padding='same', data_format='channels_last'))
+        # Conv layer 3 output shape (imgH/4, imgW/4, numChannels)
+        encoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
         encoder_model.add(Activation('relu'))
 
 
@@ -83,27 +87,27 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     decoder_model.add(encoder_model)
 
     if compressMode == 2:
-        # Conv layer output shape (16, imgH/4, imgW/4)
-        decoder_model.add(Convolution2D(16, 5, strides=1, padding='same', data_format='channels_last'))
+        # Conv layer output shape (imgH/4, imgW/4, 16)
+        decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
         decoder_model.add(Activation('relu'))
 
-        # Upsampling layer  output shape (16, imgH/2, imgW/2)
+        # Upsampling layer  output shape (imgH/2, imgW/2, 16)
         decoder_model.add(UpSampling2D((2, 2), data_format='channels_last'))
 
-    # Conv layer output shape (16, imgH/2, imgW/2)
-    decoder_model.add(Convolution2D(16, 5, strides=1, padding='same', data_format='channels_last'))
+    # Conv layer output shape (imgH/2, imgW/2, 16)
+    decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
     decoder_model.add(Activation('relu'))
 
-    # Upsampling layer output shape (16, imgH, imgW)
+    # Upsampling layer output shape (imgH, imgW, 16)
     decoder_model.add(UpSampling2D((2, 2), data_format='channels_last'))
 
-    # Conv layer output shape (16, imgH, imgW)
-    decoder_model.add(Convolution2D(16, 5, strides=1, padding='same', data_format='channels_last'))
+    # Conv layer output shape (imgH, imgW, 16)
+    decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
     decoder_model.add(Activation('relu'))
 
 
     # Conv layer output shape (1, imgH, v)
-    decoder_model.add(Convolution2D(numChannels, 5, strides=1, padding='same', data_format='channels_last'))
+    decoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
 
 
     # print model information
