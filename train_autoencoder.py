@@ -7,6 +7,8 @@ import os
 from keras.optimizers import SGD
 from setup_mnist import MNIST
 from setup_cifar import CIFAR
+from setup_inception import ImageNet
+
 
 def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=None):
 
@@ -162,10 +164,13 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 def main(args):
     # load data
     print('Loading data', args['dataset'])
-    if args['dataset'] == "mnist":
+    if args['dataset'] == 'mnist':
         data = MNIST()
-    elif args['dataset'] == "cifar10":
+    elif args['dataset'] == 'cifar10':
         data = CIFAR()
+    elif args['dataset'] == 'imagenet':
+        selectClassSet = {932, 650, 131, 207, 27, 108, 476, 129, 549, 272}
+        data = ImageNet(datasetSize=1000, testRatio=0.1)
     print('Done...')
 
     print('Start training autoencoder')
@@ -176,8 +181,8 @@ def main(args):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--dataset", choices=["mnist", "cifar10"], default="mnist", help="the dataset to train")
-    parser.add_argument("--save_prefix", default="codec_", help="prefix of file name to save trained model/weights under model folder")
+    parser.add_argument("-d", "--dataset", choices=["mnist", "cifar10", "imagenet"], default="mnist", help="the dataset to train")
+    parser.add_argument("--save_prefix", default="codec", help="prefix of file name to save trained model/weights under model folder")
     parser.add_argument("--compress_mode", type=int, choices=[1, 2], default=1, help="the compress mode, 1:25% 2:6.25%")
     parser.add_argument("--batch_size", default=1000, type=int, help="the batch size when training autoencoder")
     parser.add_argument("--epochs", default=1000, type=int, help="the number of training epochs")
@@ -193,4 +198,8 @@ if __name__ == "__main__":
     random.seed(args['seed'])
     np.random.seed(args['seed'])
     print(args)
+
+    args['dataset'] = 'imagenet'
+
+
     main(args)

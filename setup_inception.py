@@ -295,24 +295,36 @@ def readimg(ff):
   # skip small images (image should be at least 299x299)
   if img.shape[0] < 299 or img.shape[1] < 299:
     return None
-  img = np.array(scipy.misc.imresize(img,(299,299)),dtype=np.float32)/255-.5
-  if img.shape != (299, 299, 3):
+  img = np.array(scipy.misc.imresize(img,(300,300)),dtype=np.float32)/255-.5
+  if img.shape != (300, 300, 3):
     return None
   return [img, int(ff.split(".")[0])]
 
 class ImageNet:
-  def __init__(self):
+  def __init__(self, datasetSize=10000, testRatio=0.1):
     from multiprocessing import Pool
     pool = Pool(8)
     file_list = sorted(os.listdir("../imagenetdata/imgs/"))
     random.shuffle(file_list)
-    r = pool.map(readimg, file_list[:200])
-    print(file_list[:200])
+    r = pool.map(readimg, file_list[:datasetSize])
     r = [x for x in r if x != None]
-    test_data, test_labels = zip(*r)
-    self.test_data = np.array(test_data)
-    self.test_labels = np.zeros((len(test_labels), 1001))
-    self.test_labels[np.arange(len(test_labels)), test_labels] = 1
+    dataSize = len(r)
+    print("Select {} samples".format(dataSize))
+    testNum = int(np.floor(dataSize*testRatio))
+    trainNum = dataSize - testNum
+
+    temp_data, temp_labels = zip(*r)
+    temp_data = np.array(temp_data)
+    temp_labels = np.array(temp_labels)
+    print(temp_data.shape)
+    print("trainNum:{}, testNum:{}".format(trainNum, testNum))
+    self.train_data = temp_data[:trainNum, : , :, :]
+    self.train_labels = np.zeros((trainNum, 1001))
+    self.train_labels[np.arange(trainNum), temp_labels[:trainNum]] = 1
+
+    self.test_data = temp_data[trainNum:, : , :, :]
+    self.test_labels = np.zeros((testNum, 1001))
+    self.test_labels[np.arange(testNum), temp_labels[trainNum:]] = 1
 
   
 
