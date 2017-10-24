@@ -164,18 +164,18 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
 def main(args):
     # load data
-    print('Loading data', args['dataset'])
-    if args['dataset'] == 'mnist':
+    print("Loading data", args["dataset"])
+    if args["dataset"] == "mnist":
         data = MNIST()
-    elif args['dataset'] == 'cifar10':
+    elif args["dataset"] == "cifar10":
         data = CIFAR()
-    elif args['dataset'] == 'imagenet':
-        data = ImageNet(datasetSize=10000, testRatio=0.1)
-    print('Done...')
+    elif args["dataset"] == "imagenet":
+        data = ImageNet(datasetSize=args["imagenet_data_size"], testRatio=0.1)
+    print("Done...")
 
-    print('Start training autoencoder')
-    train(data, compressMode=args['compress_mode'], batch_size=args['batch_size'], epochs=args['epochs'],
-          saveFilePrefix=args['save_prefix'])
+    print("Start training autoencoder")
+    train(data, compressMode=args["compress_mode"], batch_size=args["batch_size"], epochs=args["epochs"],
+          saveFilePrefix=args["save_prefix"])
 
 
 if __name__ == "__main__":
@@ -187,16 +187,17 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=1000, type=int, help="the batch size when training autoencoder")
     parser.add_argument("--epochs", default=1000, type=int, help="the number of training epochs")
     parser.add_argument("--seed", type=int, default=9487)
+    parser.add_argument("--imagenet_data_size", type=int,  default=10000, help="the size of imagenet loaded for training, Max 50,000")
 
     args = vars(parser.parse_args())
-    if not os.path.isdir('model'):
-        print('Folder for saving models does not exist. The folder is created. ')
-        os.makedirs('model')
+    if not os.path.isdir("model"):
+        print("Folder for saving models does not exist. The folder is created.")
+        os.makedirs("model")
 
-    args['save_prefix'] = 'model/' + args['save_prefix'] + "_" + str(args['compress_mode']) + "_"
+    args["save_prefix"] = "model/" + args["save_prefix"] + "_" + str(args["compress_mode"]) + "_"
     # setup random seed
-    random.seed(args['seed'])
-    np.random.seed(args['seed'])
+    random.seed(args["seed"])
+    np.random.seed(args["seed"])
     print(args)
 
 

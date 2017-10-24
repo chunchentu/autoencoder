@@ -45,8 +45,9 @@ tar and put the imgs folder in ../imagenetdata. This path can be changed in setu
 To train the autoencoder 
 
 ```bash
-python3 train_autoencoder.py --dataset imagenet --compress_mode 2 --save_prefix imagenet --batch_size 1000 --epochs 500
+python3 train_autoencoder.py --dataset imagenet --compress_mode 2 --save_prefix imagenet --batch_size 1000 --epochs 500 --imagenet_data_size 30
 ```
+specify the number of imagenet figures to load through **imagenet_data_size**
 
 # Update history
 
