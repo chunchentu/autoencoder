@@ -126,6 +126,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     encoder_weight_filename = saveFilePrefix + "encoder.h5"
     decoder_weight_filename = saveFilePrefix + "decoder.h5"
     if os.path.exists(decoder_weight_filename):
+        print("Load the pre-trained model.")
         decoder_model.load_weights(decoder_weight_filename)
 
     sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
@@ -169,8 +170,7 @@ def main(args):
     elif args['dataset'] == 'cifar10':
         data = CIFAR()
     elif args['dataset'] == 'imagenet':
-        selectClassSet = {932, 650, 131, 207, 27, 108, 476, 129, 549, 272}
-        data = ImageNet(datasetSize=1000, testRatio=0.1)
+        data = ImageNet(datasetSize=10000, testRatio=0.1)
     print('Done...')
 
     print('Start training autoencoder')
@@ -199,7 +199,6 @@ if __name__ == "__main__":
     np.random.seed(args['seed'])
     print(args)
 
-    args['dataset'] = 'imagenet'
 
 
     main(args)

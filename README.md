@@ -5,7 +5,7 @@
 sudo pip3 install pillow scipy numpy tensorflow-gpu keras h5py
 ```
 
-# Notes
+Note:
 
 Check if the keras is using tensorflow backend, if not, modify ~/.keras.
 
@@ -40,7 +40,7 @@ To prepare the ImageNet dataset, download the file from the following link
 
 [ImageNet test data](http://jaina.cs.ucdavis.edu/datasets/adv/imagenet/img.tar.gz)
 
-tar and put the imgs folder in ../imagesnetdata. This path can be changed in setup_inception.py.
+tar and put the imgs folder in ../imagenetdata. This path can be changed in setup_inception.py.
 
 To train the autoencoder 
 

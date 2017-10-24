@@ -296,6 +296,7 @@ def readimg(ff):
   if img.shape[0] < 299 or img.shape[1] < 299:
     return None
   img = np.array(scipy.misc.imresize(img,(300,300)),dtype=np.float32)/255-.5
+
   if img.shape != (300, 300, 3):
     return None
   return [img, int(ff.split(".")[0])]
@@ -316,7 +317,6 @@ class ImageNet:
     temp_data, temp_labels = zip(*r)
     temp_data = np.array(temp_data)
     temp_labels = np.array(temp_labels)
-    print(temp_data.shape)
     print("trainNum:{}, testNum:{}".format(trainNum, testNum))
     self.train_data = temp_data[:trainNum, : , :, :]
     self.train_labels = np.zeros((trainNum, 1001))
