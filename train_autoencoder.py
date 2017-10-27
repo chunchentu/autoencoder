@@ -2,6 +2,7 @@ import numpy as np
 import random
 from keras.models import Sequential
 from keras.layers import Activation, Convolution2D, UpSampling2D, MaxPooling2D
+from keras.layers.normalization import BatchNormalization
 from keras.callbacks import ModelCheckpoint
 import os
 from keras.optimizers import SGD
@@ -48,7 +49,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
         padding='same',     # Padding method
         data_format='channels_last',
     ))
-
+    BatchNormalization(axis=3)
     if use_tanh:
         encoder_model.add(Activation('tanh'))
     else:
@@ -56,6 +57,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
     # Conv layer output shape (imgH, imgW, 16)
     encoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
+    BatchNormalization(axis=3)
     if use_tanh:
         encoder_model.add(Activation('tanh'))
     else:
@@ -71,6 +73,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
     # Conv layer output shape (imgH/2, imgW/2, numChannels)
     encoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
+    BatchNormalization(axis=3)
     if use_tanh:
         encoder_model.add(Activation('tanh'))
     else:
@@ -87,6 +90,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
         # Conv layer 3 output shape (imgH/4, imgW/4, numChannels)
         encoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
+        BatchNormalization(axis=3)
         if use_tanh:
             encoder_model.add(Activation('tanh'))
         else:
@@ -104,6 +108,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     if compressMode == 2:
         # Conv layer output shape (imgH/4, imgW/4, 16)
         decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
+        BatchNormalization(axis=3)
         if use_tanh:
             decoder_model.add(Activation('tanh'))
         else:
@@ -114,6 +119,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
     # Conv layer output shape (imgH/2, imgW/2, 16)
     decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
+    BatchNormalization(axis=3)
     if use_tanh:
         decoder_model.add(Activation('tanh'))
     else:
@@ -124,6 +130,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
     # Conv layer output shape (imgH, imgW, 16)
     decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
+    BatchNormalization(axis=3)
     if use_tanh:
         decoder_model.add(Activation('tanh'))
     else:
@@ -132,7 +139,11 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
     # Conv layer output shape (1, imgH, v)
     decoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
-    decoder_model.add(Activation('sigmoid'))
+    BatchNormalization(axis=3)
+    if use_tanh:
+        decoder_model.add(Activation('tanh'))
+    else:
+        decoder_model.add(Activation('relu'))
 
     # print model information
     print('Encoder model:')
