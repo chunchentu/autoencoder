@@ -1,9 +1,10 @@
 import numpy as np
 import random
 from keras.models import Sequential
-from keras.layers import Activation, Convolution2D, UpSampling2D, MaxPooling2D
+from keras.layers import Activation, Convolution2D, UpSampling2D, MaxPooling2D, Lambda
 from keras.layers.normalization import BatchNormalization
 from keras.callbacks import ModelCheckpoint
+from keras.backend import tf as ktf
 import os
 from keras.optimizers import SGD
 from setup_mnist import MNIST
@@ -11,7 +12,7 @@ from setup_cifar import CIFAR
 from setup_inception import ImageNet
 
 
-def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=None, use_tanh=True):
+def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=None, use_tanh=True, train_imagenet=False):
 
     """Train autoencoder
 
@@ -40,15 +41,20 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     # build a neural network from the 1st layer to the last layer
     encoder_model = Sequential()
 
-    # Conv layer output shape (imgH, imgW, 16)
-    encoder_model.add(Convolution2D(
-        batch_input_shape=(None, imgH, imgW, numChannels),
-        filters=16,
-        kernel_size=3,
-        strides=1,
-        padding='same',     # Padding method
-        data_format='channels_last',
-    ))
+    if train_imagenet:
+        encoder_model.add( Lambda(lambda image: tf.image.resize_images(image, (256, 256)), 
+            input_shape=(imgH, imgW, numChannels)))
+        encoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
+    else:
+        # Conv layer output shape (imgH, imgW, 16)
+        encoder_model.add(Convolution2D(
+            batch_input_shape=(None, imgH, imgW, numChannels),
+            filters=16,
+            kernel_size=3,
+            strides=1,
+            padding='same',     # Padding method
+            data_format='channels_last',
+        ))
     BatchNormalization(axis=3)
     if use_tanh:
         encoder_model.add(Activation('tanh'))
@@ -80,13 +86,21 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
         encoder_model.add(Activation('relu'))
 
     if compressMode == 2:
-        # Pooling layer (max pooling) output shape (imgH/4, imgW/4, numChannels)
-        encoder_model.add(MaxPooling2D(
-            pool_size=2,
-            strides=2,
-            padding='same',  # Padding method
-            data_format='channels_last',
-        ))
+        if train_imagenet:
+            encoder_model.add(MaxPooling2D(
+                pool_size=4,
+                strides=4,
+                padding='same',  # Padding method
+                data_format='channels_last',
+                ))
+        else:
+            # Pooling layer (max pooling) output shape (imgH/4, imgW/4, numChannels)
+            encoder_model.add(MaxPooling2D(
+                pool_size=2,
+                strides=2,
+                padding='same',  # Padding method
+                data_format='channels_last',
+            ))
 
         # Conv layer 3 output shape (imgH/4, imgW/4, numChannels)
         encoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
@@ -114,8 +128,11 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
         else:
             decoder_model.add(Activation('relu'))
 
-        # Upsampling layer  output shape (imgH/2, imgW/2, 16)
-        decoder_model.add(UpSampling2D((2, 2), data_format='channels_last'))
+        if train_imagenet:
+            decoder_model.add(UpSampling2D((4, 4), data_format='channels_last'))
+        else:
+            # Upsampling layer  output shape (imgH/2, imgW/2, 16)
+            decoder_model.add(UpSampling2D((2, 2), data_format='channels_last'))
 
     # Conv layer output shape (imgH/2, imgW/2, 16)
     decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
@@ -137,7 +154,11 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
         decoder_model.add(Activation('relu'))
 
 
-    # Conv layer output shape (1, imgH, v)
+    # Conv layer output shape (1, imgH, imgW)
+
+    if train_imagenet:
+        decoder_model.add( Lambda(lambda image: tf.image.resize_images(image, (imgH, imgW))))
+
     decoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
     BatchNormalization(axis=3)
     if use_tanh:
@@ -204,11 +225,12 @@ def main(args):
         data = CIFAR()
     elif args["dataset"] == "imagenet":
         data = ImageNet(datasetSize=args["imagenet_data_size"], testRatio=0.1)
+        
     print("Done...")
 
     print("Start training autoencoder")
     train(data, compressMode=args["compress_mode"], batch_size=args["batch_size"], epochs=args["epochs"],
-          saveFilePrefix=args["save_prefix"], use_tanh=args["use_tanh"])
+          saveFilePrefix=args["save_prefix"], use_tanh=args["use_tanh"], train_imagenet=args["train_imagenet"])
 
 
 if __name__ == "__main__":
@@ -220,6 +242,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=1000, type=int, help="the batch size when training autoencoder")
     parser.add_argument("--epochs", default=1000, type=int, help="the number of training epochs")
     parser.add_argument("--seed", type=int, default=9487)
+    parser.add_argument("--train_imagenet", action='store_true', help = "the encoder for imagenet would be different")
     parser.add_argument("--imagenet_data_size", type=int,  default=10000, help="the size of imagenet loaded for training, Max 50,000")
     parser.add_argument("--use_tanh", action='store_true', help = "use tanh as activation function")
     args = vars(parser.parse_args())

@@ -297,31 +297,42 @@ def readimg(ff):
     return None
   img = np.array(scipy.misc.imresize(img,(300,300)),dtype=np.float32)/255-.5
 
-  if img.shape != (300, 300, 3):
+  if img.shape != (299, 299, 3):
     return None
   return [img, int(ff.split(".")[0])]
 
 class ImageNet:
   def __init__(self, datasetSize=10000, testRatio=0.1):
+    # fix random number to generate training and testing set
+    # fix last 5000 data as testing data
+    random.seed(5566)
     from multiprocessing import Pool
     pool = Pool(8)
     file_list = sorted(os.listdir("../imagenetdata/imgs/"))
     random.shuffle(file_list)
-    r = pool.map(readimg, file_list[:datasetSize])
-    r = [x for x in r if x != None]
-    dataSize = len(r)
-    print("Select {} samples".format(dataSize))
+
     testNum = int(np.floor(dataSize*testRatio))
     trainNum = dataSize - testNum
 
+    r = pool.map(readimg, file_list[:trainNum])
+    r = [x for x in r if x != None]
+    print("Select {} training samples".format(trainNum))
     temp_data, temp_labels = zip(*r)
     temp_data = np.array(temp_data)
     temp_labels = np.array(temp_labels)
-    print("trainNum:{}, testNum:{}".format(trainNum, testNum))
-    self.train_data = temp_data[:trainNum, : , :, :]
+    self.train_data = temp_data
     self.train_labels = np.zeros((trainNum, 1001))
-    self.train_labels[np.arange(trainNum), temp_labels[:trainNum]] = 1
+    self.train_labels[np.arange(trainNum), temp_labels] = 1
 
+
+    print("trainNum:{}, testNum:{}".format(trainNum, testNum))
+    
+    r = pool.map(readimg, file_list[testNum:])
+    r = [x for x in r if x != None]
+    print("Select {} training samples".format(trainNum))
+    temp_data, temp_labels = zip(*r)
+    temp_data = np.array(temp_data)
+    temp_labels = np.array(temp_labels)
     self.test_data = temp_data[trainNum:, : , :, :]
     self.test_labels = np.zeros((testNum, 1001))
     self.test_labels[np.arange(testNum), temp_labels[trainNum:]] = 1
