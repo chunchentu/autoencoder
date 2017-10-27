@@ -10,7 +10,7 @@ from setup_cifar import CIFAR
 from setup_inception import ImageNet
 
 
-def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=None):
+def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=None, use_tanh=True):
 
     """Train autoencoder
 
@@ -48,11 +48,18 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
         padding='same',     # Padding method
         data_format='channels_last',
     ))
-    encoder_model.add(Activation('relu'))
+
+    if use_tanh:
+        encoder_model.add(Activation('tanh'))
+    else:
+        encoder_model.add(Activation('relu'))
 
     # Conv layer output shape (imgH, imgW, 16)
     encoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
-    encoder_model.add(Activation('relu'))
+    if use_tanh:
+        encoder_model.add(Activation('tanh'))
+    else:
+        encoder_model.add(Activation('relu'))
 
     # Pooling layer (max pooling) output shape (imgH/2, imgW/2, 16)
     encoder_model.add(MaxPooling2D(
@@ -64,7 +71,10 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
     # Conv layer output shape (imgH/2, imgW/2, numChannels)
     encoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
-    encoder_model.add(Activation('relu'))
+    if use_tanh:
+        encoder_model.add(Activation('tanh'))
+    else:
+        encoder_model.add(Activation('relu'))
 
     if compressMode == 2:
         # Pooling layer (max pooling) output shape (imgH/4, imgW/4, numChannels)
@@ -77,7 +87,10 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
         # Conv layer 3 output shape (imgH/4, imgW/4, numChannels)
         encoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
-        encoder_model.add(Activation('relu'))
+        if use_tanh:
+            encoder_model.add(Activation('tanh'))
+        else:
+            encoder_model.add(Activation('relu'))
 
 
     # end of encoding
@@ -91,26 +104,35 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     if compressMode == 2:
         # Conv layer output shape (imgH/4, imgW/4, 16)
         decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
-        decoder_model.add(Activation('relu'))
+        if use_tanh:
+            decoder_model.add(Activation('tanh'))
+        else:
+            decoder_model.add(Activation('relu'))
 
         # Upsampling layer  output shape (imgH/2, imgW/2, 16)
         decoder_model.add(UpSampling2D((2, 2), data_format='channels_last'))
 
     # Conv layer output shape (imgH/2, imgW/2, 16)
     decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
-    decoder_model.add(Activation('relu'))
+    if use_tanh:
+        decoder_model.add(Activation('tanh'))
+    else:
+        decoder_model.add(Activation('relu'))
 
     # Upsampling layer output shape (imgH, imgW, 16)
     decoder_model.add(UpSampling2D((2, 2), data_format='channels_last'))
 
     # Conv layer output shape (imgH, imgW, 16)
     decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
-    decoder_model.add(Activation('relu'))
+    if use_tanh:
+        decoder_model.add(Activation('tanh'))
+    else:
+        decoder_model.add(Activation('relu'))
 
 
     # Conv layer output shape (1, imgH, v)
     decoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
-
+    decoder_model.add(Activation('sigmoid'))
 
     # print model information
     print('Encoder model:')
@@ -175,7 +197,7 @@ def main(args):
 
     print("Start training autoencoder")
     train(data, compressMode=args["compress_mode"], batch_size=args["batch_size"], epochs=args["epochs"],
-          saveFilePrefix=args["save_prefix"])
+          saveFilePrefix=args["save_prefix"], use_tanh=args["use_tanh"])
 
 
 if __name__ == "__main__":
@@ -188,7 +210,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", default=1000, type=int, help="the number of training epochs")
     parser.add_argument("--seed", type=int, default=9487)
     parser.add_argument("--imagenet_data_size", type=int,  default=10000, help="the size of imagenet loaded for training, Max 50,000")
-
+    parser.add_argument("--use_tanh", action='store_true', help = "use tanh as activation function")
     args = vars(parser.parse_args())
     if not os.path.isdir("model"):
         print("Folder for saving models does not exist. The folder is created.")
