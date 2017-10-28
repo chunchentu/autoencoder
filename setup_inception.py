@@ -289,20 +289,23 @@ def main(_):
       print('%s (score = %.5f)' % (human_string, score))
 
 
-def readimg(ff):
+def readimg(ff, force=False):
   f = "../imagenetdata/imgs/"+ff
   img = scipy.misc.imread(f)
   # skip small images (image should be at least 299x299)
   if img.shape[0] < 299 or img.shape[1] < 299:
     return None
-  img = np.array(scipy.misc.imresize(img,(300,300)),dtype=np.float32)/255-.5
+  img = np.array(scipy.misc.imresize(img,(299,299)),dtype=np.float32)/255-.5
 
-  if img.shape != (299, 299, 3):
-    return None
+  if not force:
+    if img.shape != (299, 299, 3):
+      return None
+  else:
+    print("Force read {}".format(ff))
   return [img, int(ff.split(".")[0])]
 
 class ImageNet:
-  def __init__(self, datasetSize=10000, testRatio=0.1):
+  def __init__(self, datasetSize=10000, testRatio=0.1, targetFile=None, targetClass=None):
     # fix random number to generate training and testing set
     # fix last 5000 data as testing data
     random.seed(5566)
@@ -311,11 +314,12 @@ class ImageNet:
     file_list = sorted(os.listdir("../imagenetdata/imgs/"))
     random.shuffle(file_list)
 
-    testNum = int(np.floor(dataSize*testRatio))
-    trainNum = dataSize - testNum
-
+    testNum = int(np.floor(datasetSize*testRatio))
+    trainNum = datasetSize - testNum
+    print("Train:{}, test:{}".format(trainNum, testNum))
     r = pool.map(readimg, file_list[:trainNum])
     r = [x for x in r if x != None]
+    trainNum = len(r)
     print("Select {} training samples".format(trainNum))
     temp_data, temp_labels = zip(*r)
     temp_data = np.array(temp_data)
@@ -325,17 +329,24 @@ class ImageNet:
     self.train_labels[np.arange(trainNum), temp_labels] = 1
 
 
-    print("trainNum:{}, testNum:{}".format(trainNum, testNum))
-    
-    r = pool.map(readimg, file_list[testNum:])
-    r = [x for x in r if x != None]
-    print("Select {} training samples".format(trainNum))
-    temp_data, temp_labels = zip(*r)
-    temp_data = np.array(temp_data)
-    temp_labels = np.array(temp_labels)
-    self.test_data = temp_data[trainNum:, : , :, :]
-    self.test_labels = np.zeros((testNum, 1001))
-    self.test_labels[np.arange(testNum), temp_labels[trainNum:]] = 1
+    if targetFile is None:
+      r = pool.map(readimg, file_list[-testNum:])
+      r = [x for x in r if x != None]
+      testNum = len(r)
+      print("Select {} testing samples".format(testNum))
+      temp_data, temp_labels = zip(*r)
+      temp_data = np.array(temp_data)
+      temp_labels = np.array(temp_labels)
+      self.test_data = temp_data
+      self.test_labels = np.zeros((testNum, 1001))
+      self.test_labels[np.arange(testNum), temp_labels] = 1
+    else:
+      temp_data, temp_label = readimg(targetFile, force=True)
+      self.test_data = np.array(temp_data)
+      temp_label = np.array(temp_label)
+      self.test_labels = np.zeros((1, 1001))
+      self.test_labels[0, temp_label] = 1
+      print("Read target file {}".format(targetFile))
 
   
 

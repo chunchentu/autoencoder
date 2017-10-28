@@ -10,7 +10,7 @@ from keras.optimizers import SGD
 from setup_mnist import MNIST
 from setup_cifar import CIFAR
 from setup_inception import ImageNet
-
+import tensorflow as tf
 
 def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=None, use_tanh=True, train_imagenet=False):
 
@@ -42,8 +42,14 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     encoder_model = Sequential()
 
     if train_imagenet:
-        encoder_model.add( Lambda(lambda image: tf.image.resize_images(image, (256, 256)), 
-            input_shape=(imgH, imgW, numChannels)))
+        # need to define function and import tf to avoid loading problem
+        # see https://github.com/fchollet/keras/issues/5298
+        def resize_input(image):
+            import tensorflow as tf
+            output = tf.image.resize_images(image, (256, 256))
+            return output
+
+        encoder_model.add( Lambda(resize_input), input_shape=(imgH, imgW, numChannels)))
         encoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
     else:
         # Conv layer output shape (imgH, imgW, 16)
@@ -157,7 +163,12 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     # Conv layer output shape (1, imgH, imgW)
 
     if train_imagenet:
-        decoder_model.add( Lambda(lambda image: tf.image.resize_images(image, (imgH, imgW))))
+        def resize_output(image):
+            import tensorflow as tf
+            output = tf.image.resize_images(image, (imgH, imgW))
+            return output
+        
+        decoder_model.add( Lambda(resize_input))
 
     decoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
     BatchNormalization(axis=3)
