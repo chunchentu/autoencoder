@@ -54,13 +54,26 @@ def main(args):
 	if usr_response.lower() == "y":
 		print("Moving data")
 		for img in train_file_list:
+			img_class = img.split(".")[0]
+			class_dir = os.path.join(train_dir, str(img_class))
+			if not os.path.isdir(class_dir):
+			    os.makedirs(class_dir)
+
 			source_path = os.path.join(img_directory, img)
-			destination_path = os.path.join(train_dir, img)
+			destination_path = os.path.join(class_dir, img)
 			os.rename(source_path, destination_path)
+
+
 		for img in test_file_list:
+			img_class = img.split(".")[0]
+			class_dir = os.path.join(test_dir, str(img_class))
+			if not os.path.isdir(class_dir):
+			    os.makedirs(class_dir)
+
 			source_path = os.path.join(img_directory, img)
-			destination_path = os.path.join(test_dir, img)
+			destination_path = os.path.join(class_dir, img)
 			os.rename(source_path, destination_path)
+
 		print("Done")
 	else:
 		print("Files are not moved")
