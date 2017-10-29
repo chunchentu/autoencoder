@@ -44,12 +44,14 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     if train_imagenet:
         # need to define function and import tf to avoid loading problem
         # see https://github.com/fchollet/keras/issues/5298
-        def resize_input(image):
-            import tensorflow as tf
-            output = tf.image.resize_images(image, (256, 256))
-            return output
+        #def resize_input(image):
+        #    import tensorflow as tf
+        #    output = tf.image.resize_images(image, (256, 256))
+        #    return output
 
-        encoder_model.add( Lambda(resize_input), input_shape=(imgH, imgW, numChannels)))
+        #encoder_model.add( Lambda(resize_input, input_shape=(imgH, imgW, numChannels)))
+        encoder_model.add( Lambda(lambda image: tf.image.resize_images(image, (256, 256)), 
+            input_shape=(imgH, imgW, numChannels)))
         encoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
     else:
         # Conv layer output shape (imgH, imgW, 16)
@@ -163,12 +165,17 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     # Conv layer output shape (1, imgH, imgW)
 
     if train_imagenet:
-        def resize_output(image):
-            import tensorflow as tf
-            output = tf.image.resize_images(image, (imgH, imgW))
-            return output
-        
-        decoder_model.add( Lambda(resize_input))
+        #def resize_output(image):
+        #    import tensorflow as tf
+        #    output = tf.image.resize_images(image, (imgH, imgW))
+        #    return output
+        #decoder_model.add( Lambda(resize_output))
+
+        # the original code would resize the image back to (imgH, imgW)
+        # however, keras seems to have some issue with deserialization
+        # currently resize to fixed size 299x299 (assuming imagenet is used)
+        #decoder_model.add( Lambda(lambda image: tf.image.resize_images(image, (imgH, imgW))))
+        decoder_model.add( Lambda(lambda image: tf.image.resize_images(image, (299, 299))))
 
     decoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
     BatchNormalization(axis=3)
@@ -221,6 +228,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     model_json = decoder_model.to_json()
     with open(decoder_model_filename, "w") as json_file:
         json_file.write(model_json)
+
     print("Decoder specification is saved to {}".format(decoder_model_filename))
 
     decoder_model.save_weights(decoder_weight_filename)
