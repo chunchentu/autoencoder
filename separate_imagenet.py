@@ -19,7 +19,7 @@ def main(args):
 	testNum = int(np.floor(data_size*test_ratio))
 	trainNum = data_size - testNum
 	print("There are {} files in the source directory".format(data_size))
-	print("Test ratio{}, splitting data into {} training, {} testing".format(test_ratio, trainNum, testNum))
+	print("Test ratio {}, splitting data into {} training, {} testing".format(test_ratio, trainNum, testNum))
 
 	train_file_list = sorted(file_list[:trainNum])
 	test_file_list = sorted(file_list[trainNum:])

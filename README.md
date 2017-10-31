@@ -57,8 +57,7 @@ To train the autoencoder using the following commands:
 ```bash
 python3 train_autoencoder.py --dataset imagenet --compress_mode 2 --save_prefix imagenet --batch_size 100 --epochs 100 --use_tanh --train_imagenet
 ```
-
-
+This would load and traingin data in `../imagenetdata/train_dir` and `../imagenetdata/test_dir` for training.
 
 # Update history
 
