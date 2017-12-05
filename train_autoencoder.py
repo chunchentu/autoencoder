@@ -98,10 +98,10 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     # Conv layer output shape (imgH/2, imgW/2, numChannels)
     encoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
     BatchNormalization(axis=3)
-    if use_tanh:
-        encoder_model.add(Activation('tanh'))
-    else:
-        encoder_model.add(Activation('relu'))
+    #if use_tanh:
+    #    encoder_model.add(Activation('tanh'))
+    #else:
+    #    encoder_model.add(Activation('relu'))
 
     if compressMode == 2:
         if train_imagenet:
@@ -123,10 +123,10 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
         # Conv layer 3 output shape (imgH/4, imgW/4, numChannels)
         encoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
         BatchNormalization(axis=3)
-        if use_tanh:
-            encoder_model.add(Activation('tanh'))
-        else:
-            encoder_model.add(Activation('relu'))
+        #if use_tanh:
+        #    encoder_model.add(Activation('tanh'))
+        #else:
+        #    encoder_model.add(Activation('relu'))
 
 
     # end of encoding
@@ -188,11 +188,13 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
         decoder_model.add( Lambda(lambda image: tf.image.resize_images(image, (299, 299))))
 
     decoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
-    BatchNormalization(axis=3)
-    if use_tanh:
-        decoder_model.add(Activation('tanh'))
-    else:
-        decoder_model.add(Activation('relu'))
+    
+    #BatchNormalization(axis=3) 
+    # the final activation layer would cause problem
+    #if use_tanh:
+    #    decoder_model.add(Activation('tanh'))
+    #else:
+    #    decoder_model.add(Activation('relu'))
 
     # print model information
     print('Encoder model:')
@@ -218,6 +220,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
 
     if not train_imagenet:
+        print("Train without data generater")
         decoder_model.fit(x_train, y_train,
                   batch_size=batch_size,
                   validation_data=(x_test, y_test),
