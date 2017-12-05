@@ -9,12 +9,11 @@ Note:
 
 Check if the keras is using tensorflow backend, if not, modify ~/.keras/keras.json
 
-
-# CIFAR10
-To train the autoencoder on cifar10 dataset:
+# mnist
+To train the autoencoder on mnist dataset:
 
 ```bash
-python3 train_autoencoder.py --dataset cifar10 --compress_mode 2 --save_prefix cifar10 --batch_size 1000 --epochs 1000
+python3 train_autoencoder.py --dataset mnist --compress_mode 2 --save_prefix mnist --batch_size 1000 --epochs 1000
 ```
 
 Several arguments:
@@ -26,6 +25,15 @@ Several arguments:
 - save_model: The file name to save the model. The autoencoder would be saved under "model" folder
 
 - save_ckpt: The file name to save the checkpoint. The checkpoint file would be saved under "model" folder
+
+# CIFAR10
+To train the autoencoder on cifar10 dataset:
+
+```bash
+python3 train_autoencoder.py --dataset cifar10 --compress_mode 2 --save_prefix cifar10 --batch_size 1000 --epochs 1000
+```
+
+Arguments are the same as mnist
 
 
 # ImageNet
@@ -78,21 +86,3 @@ This would load and traingin data in `../imagenetdata/train_dir` and `../imagene
 
 # TODO:
 
-
-<!--
-image generator
-```
-python3 train_autoencoder.py --dataset imagenet --compress_mode 2 --save_prefix imagenet --batch_size 100 --epochs 100 --imagenet_data_size 2500 --use_tanh --train_imagenet --imagenet_path ../imagenetdata/ | tee logfile/imagenet_32
-```
-
-
-
-## keras image generator
-https://blog.keras.io/building-powerful-image-classification-models-using-very-little-data.html
-
-https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly.html
-
-
-python3 train_autoencoder.py --dataset imagenet --compress_mode 2 --save_prefix imagenet --batch_size 100 --epochs 100 --use_tanh --train_imagenet | tee logfile/imagenet_32
-
--->
