@@ -14,7 +14,7 @@ import tensorflow as tf
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 
 
-def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=None, use_tanh=True, train_imagenet=False, imagenet_path=None):
+def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=None, use_tanh=True, train_imagenet=False, imagenet_path=None, train_on_test=False, train_on_test_ratio=0.99):
 
     """Train autoencoder
 
@@ -31,12 +31,26 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     
 
     if not train_imagenet:
-        trainNum, imgH, imgW, numChannels = data.train_data.shape
-        x_train = data.train_data
-        y_train = x_train
+        if train_on_test:
+            dataset_size, imgH, imgW, numChannels = data.test_data.shape
+            trainNum = int(dataset_size * train_on_test_ratio)
+            random_index = np.random.permutation(dataset_size)
+            train_index = random_index[:trainNum]
+            test_index = random_index[trainNum:]
 
-        x_test = data.test_data
-        y_test = x_test
+            x_train = data.test_data[train_index]
+            y_train = x_train
+
+            x_test = data.test_data[test_index]
+            y_test = x_test
+        else:
+            trainNum, imgH, imgW, numChannels = data.train_data.shape
+            x_train = data.train_data
+            y_train = x_train
+
+            x_test = data.test_data
+            y_test = x_test
+
 
         print("Shape of training data:{}".format(x_train.shape))
         print("Shape of testing data:{}".format(x_test.shape))
@@ -305,7 +319,8 @@ def main(args):
     print("Start training autoencoder")
     train(data, compressMode=args["compress_mode"], batch_size=args["batch_size"], 
             epochs=args["epochs"], saveFilePrefix=args["save_prefix"], 
-            use_tanh=args["use_tanh"], train_imagenet=args["train_imagenet"])
+            use_tanh=args["use_tanh"], train_imagenet=args["train_imagenet"],
+            train_on_test=args["train_on_test"], train_on_test_ratio=args["train_on_test_ratio"])
 
 
 if __name__ == "__main__":
@@ -321,12 +336,18 @@ if __name__ == "__main__":
     parser.add_argument("--imagenet_data_size", type=int,  default=10000, help="the size of imagenet loaded for training, Max 50,000")
     parser.add_argument("--use_tanh", action='store_true', help = "use tanh as activation function")
     parser.add_argument("--imagenet_path", help="the path to imagenet images")
+    parser.add_argument("--train_on_test", action="store_true", help="use only testing data to train the autoencoder")
+    parser.add_argument("--train_on_test_ratio", type=float, default=0.99, help="the ratio of testing data to train the autoencoder; only used when train_on_test is set")
     args = vars(parser.parse_args())
     if not os.path.isdir("model"):
         print("Folder for saving models does not exist. The folder is created.")
         os.makedirs("model")
 
     args["save_prefix"] = "model/" + args["save_prefix"] + "_" + str(args["compress_mode"]) + "_"
+    if args["train_on_test"]:
+        print("Building autoencoder on the testing data")
+
+
     # setup random seed
     random.seed(args["seed"])
     np.random.seed(args["seed"])

@@ -67,7 +67,25 @@ python3 train_autoencoder.py --dataset imagenet --compress_mode 2 --save_prefix 
 ```
 This would load and traingin data in `../imagenetdata/train_dir` and `../imagenetdata/test_dir` for training.
 
+# Building autoencoder on the testing dataset
+
+Under some situation (e.g. blackbox attack), it is assumed users have no access to the training data. This can be done by setting `--train_on_test` and specify the ratio of splitting the testing data through `--train_on_test_ratio` (default 0.99)
+
+For mnist
+
+```bash
+python3 train_autoencoder.py --dataset mnist --compress_mode 1 --save_prefix test_mnist --batch_size 5000 --epochs 10000 --train_on_test
+```
+
+For cifar10
+
+```bash
+python3 train_autoencoder.py --dataset cifar10 --compress_mode 1 --save_prefix test_cifar10 --batch_size 5000 --epochs 10000 --train_on_test
+```
+
 # Update history
+
+- Update 12/14/2017: Add the feature to build autoencoder on the testing dataset
 
 - Update 10/30/2017: Batching training on imagenet using Keras ImageDataGenerator is now available.
 
