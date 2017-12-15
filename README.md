@@ -83,7 +83,21 @@ For cifar10
 python3 train_autoencoder.py --dataset cifar10 --compress_mode 1 --save_prefix test_cifar10 --batch_size 5000 --epochs 10000 --train_on_test
 ```
 
+The size of the test dataset could be insufficient to train the model. We can do the image augmentation by turning on the option `--augment_data`.
+
+For mnist
+```bash
+python3 train_autoencoder.py --dataset mnist --compress_mode 1 --save_prefix aug_mnist --batch_size 1000 --epochs 1000 --train_on_test --augment_data
+```
+
+For cifar10
+```bash
+python3 train_autoencoder.py --dataset cifar10 --compress_mode 1 --save_prefix aug_cifar10 --batch_size 1000 --epochs 1000 --train_on_test --augment_data
+```
+
 # Update history
+
+- Update 12/15/2017: Add augmentation for mnist and cifar10.
 
 - Update 12/14/2017: Add the feature to build autoencoder on the testing dataset
 

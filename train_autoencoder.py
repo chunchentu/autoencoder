@@ -14,7 +14,7 @@ import tensorflow as tf
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 
 
-def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=None, use_tanh=True, train_imagenet=False, imagenet_path=None, train_on_test=False, train_on_test_ratio=0.99):
+def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=None, use_tanh=True, train_imagenet=False, imagenet_path=None, train_on_test=False, train_on_test_ratio=0.99, augment_data=False):
 
     """Train autoencoder
 
@@ -34,6 +34,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
         if train_on_test:
             dataset_size, imgH, imgW, numChannels = data.test_data.shape
             trainNum = int(dataset_size * train_on_test_ratio)
+            testNum = dataset_size - trainNum
             random_index = np.random.permutation(dataset_size)
             train_index = random_index[:trainNum]
             test_index = random_index[trainNum:]
@@ -43,6 +44,20 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
             x_test = data.test_data[test_index]
             y_test = x_test
+
+            if augment_data:
+                # currently works on mnist
+                # mnist is in the range of -0.5 ~ 0.5
+                # don't need to rescale it
+                print("Augmenting data with image generator")
+                train_datagen = ImageDataGenerator(
+                            shear_range=0.2,
+                            zoom_range=0.2,
+                            horizontal_flip=True,
+                            vertical_flip=True,
+                            fill_mode='nearest')
+                #train_generator = train_datagen.fit(x_train)  
+
         else:
             trainNum, imgH, imgW, numChannels = data.train_data.shape
             x_train = data.train_data
@@ -234,8 +249,28 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
 
     if not train_imagenet:
-        print("Train without data generater")
-        decoder_model.fit(x_train, y_train,
+        if augment_data:
+            print("Train imagenet with data generater")
+
+            # custom generator
+
+            def generate_data(data_generator, batch_size):
+                while True:
+                    x_batch, _ = next(data_generator.flow(x_train, y_train, batch_size=batch_size))
+                    yield (x_batch, x_batch)
+
+            decoder_model.fit_generator(
+                    generate_data(train_datagen, batch_size),
+                    steps_per_epoch= trainNum//batch_size,
+                    epochs=epochs,
+                    validation_data=(x_test, y_test),
+                    validation_steps=testNum,
+                    callbacks = [checkpointer])
+
+
+        else:
+            print("Train without data generater")
+            decoder_model.fit(x_train, y_train,
                   batch_size=batch_size,
                   validation_data=(x_test, y_test),
                   epochs=epochs,
@@ -320,7 +355,7 @@ def main(args):
     train(data, compressMode=args["compress_mode"], batch_size=args["batch_size"], 
             epochs=args["epochs"], saveFilePrefix=args["save_prefix"], 
             use_tanh=args["use_tanh"], train_imagenet=args["train_imagenet"],
-            train_on_test=args["train_on_test"], train_on_test_ratio=args["train_on_test_ratio"])
+            train_on_test=args["train_on_test"], train_on_test_ratio=args["train_on_test_ratio"], augment_data=args["augment_data"])
 
 
 if __name__ == "__main__":
@@ -338,6 +373,7 @@ if __name__ == "__main__":
     parser.add_argument("--imagenet_path", help="the path to imagenet images")
     parser.add_argument("--train_on_test", action="store_true", help="use only testing data to train the autoencoder")
     parser.add_argument("--train_on_test_ratio", type=float, default=0.99, help="the ratio of testing data to train the autoencoder; only used when train_on_test is set")
+    parser.add_argument("--augment_data", action="store_true", help="apply image augmentation on mnist dataset")
     args = vars(parser.parse_args())
     if not os.path.isdir("model"):
         print("Folder for saving models does not exist. The folder is created.")
