@@ -40,7 +40,6 @@ def main(args):
 		trainNum = class_size - testNum
 		train_file_list.extend(class_file_list[:trainNum])
 		test_file_list.extend(class_file_list[trainNum:])
-		print(test_file_list)
 
 
 	train_file_list = sorted(file_list[:trainNum])
