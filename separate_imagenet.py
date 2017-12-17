@@ -14,12 +14,34 @@ def main(args):
 	file_list = sorted([f for f in os.listdir(img_directory) if not f.startswith('.')])
 	data_size = len(file_list)
 	random.seed(seed)
-	random.shuffle(file_list)
+	#random.shuffle(file_list)
 
 	testNum = int(np.floor(data_size*test_ratio))
 	trainNum = data_size - testNum
 	print("There are {} files in the source directory".format(data_size))
 	print("Test ratio {}, splitting data into {} training, {} testing".format(test_ratio, trainNum, testNum))
+
+	class_set = set()
+
+	# random select based on class
+	for img in file_list:
+		img_class = img.split(".")
+		class_set.add(int(img_class[0]))
+
+	print("Number of classes:{}".format(len(class_set)))
+
+	train_file_list = []
+	test_file_list = []
+
+	for c in class_set:
+		class_file_list = [x for x in file_list if x.startswith("{}.".format(c))]
+		class_size = len(class_file_list)
+		testNum = int(np.floor(class_size*test_ratio))
+		trainNum = class_size - testNum
+		train_file_list.extend(class_file_list[:trainNum])
+		test_file_list.extend(class_file_list[trainNum:])
+		print(test_file_list)
+
 
 	train_file_list = sorted(file_list[:trainNum])
 	test_file_list = sorted(file_list[trainNum:])
