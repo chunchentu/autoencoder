@@ -35,6 +35,7 @@ def main(args):
 
 	for c in class_set:
 		class_file_list = [x for x in file_list if x.startswith("{}.".format(c))]
+		random.shuffle(class_file_list)
 		class_size = len(class_file_list)
 		testNum = int(np.floor(class_size*test_ratio))
 		trainNum = class_size - testNum
