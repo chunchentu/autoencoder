@@ -42,8 +42,8 @@ def main(args):
 		test_file_list.extend(class_file_list[trainNum:])
 
 
-	train_file_list = sorted(file_list[:trainNum])
-	test_file_list = sorted(file_list[trainNum:])
+	#train_file_list = sorted(file_list[:trainNum])
+	#test_file_list = sorted(file_list[trainNum:])
 
 	parent_path = os.path.dirname(img_directory)
 
