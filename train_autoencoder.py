@@ -40,19 +40,24 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
             test_index = random_index[trainNum:]
 
             x_train = data.test_data[train_index]
+            x_train = np.concatenate( (x_train, np.zeros([5000, imgH, imgW, numChannels])), axis=0)
+            x_train = np.concatenate( (x_train, data.validation_data))
             y_train = x_train
 
             x_test = data.test_data[test_index]
             y_test = x_test
 
+            trainNum = data.test_data.shape[0]
             if augment_data:
                 # currently works on mnist
                 # mnist is in the range of -0.5 ~ 0.5
                 # don't need to rescale it
                 print("Augmenting data with image generator")
                 train_datagen = ImageDataGenerator(
-                            shear_range=0.2,
-                            zoom_range=0.2,
+                            width_shift_range=0.8,
+                            height_shift_range=0.8,
+                            shear_range=0.8,
+                            zoom_range=0.8,
                             horizontal_flip=True,
                             vertical_flip=True,
                             fill_mode='nearest')
@@ -314,41 +319,56 @@ class imagenet_imageGen:
     def __init__(self, train_datagen, test_datagen):
         self.train_datagen = train_datagen
         self.test_datagen = test_datagen
-
+class general_data:
+    def __init__(self, data, labels, fromData):
+        self.train_data = data
+        self.train_labels = labels
+        self.test_data = fromData.test_data
+        self.test_labels = fromData.test_labels
 
 def main(args):
     # load data
-    print("Loading data", args["dataset"])
-    if args["dataset"] == "mnist":
-        data = MNIST()
-    elif args["dataset"] == "cifar10":
-        data = CIFAR()
-    elif args["dataset"] == "imagenet":
-        # the following code is the old function for loading imagenet data
-        # data = ImageNet(datasetSize=args["imagenet_data_size"], testRatio=0.1)
-        
-        # new version uses ImageDataGenerator provided by Keras
-        train_datagen = ImageDataGenerator(
-                            rescale=1./255,
-                            shear_range=0.2,
-                            zoom_range=0.2,
-                            horizontal_flip=True,
-                            fill_mode='nearest')
-        test_datagen = ImageDataGenerator(rescale=1./255)
-        train_generator = train_datagen.flow_from_directory(
-                                "../imagenetdata/train_dir",
-                                target_size=(299, 299),  
-                                batch_size=args["batch_size"],
-                                class_mode="input")  
+    if args["use_other_data_name"] is None:
+        print("Loading data", args["dataset"])
+        if args["dataset"] == "mnist":
+            data = MNIST()
+        elif args["dataset"] == "cifar10":
+            data = CIFAR()
+        elif args["dataset"] == "imagenet":
+            # the following code is the old function for loading imagenet data
+            # data = ImageNet(datasetSize=args["imagenet_data_size"], testRatio=0.1)
+            
+            # new version uses ImageDataGenerator provided by Keras
+            train_datagen = ImageDataGenerator(
+                                rescale=1./255,
+                                shear_range=0.2,
+                                zoom_range=0.2,
+                                horizontal_flip=True,
+                                fill_mode='nearest')
+            test_datagen = ImageDataGenerator(rescale=1./255)
+            train_generator = train_datagen.flow_from_directory(
+                                    "../imagenetdata/train_dir",
+                                    target_size=(299, 299),  
+                                    batch_size=args["batch_size"],
+                                    class_mode="input")  
 
-        # this is a similar generator, for validation data
-        validation_generator = test_datagen.flow_from_directory(
-                                "../imagenetdata/test_dir",
-                                target_size=(299, 299),
-                                batch_size=args["batch_size"],
-                                class_mode="input")
-        data = imagenet_imageGen(train_generator, validation_generator)
-        print(data.train_datagen)
+            # this is a similar generator, for validation data
+            validation_generator = test_datagen.flow_from_directory(
+                                    "../imagenetdata/test_dir",
+                                    target_size=(299, 299),
+                                    batch_size=args["batch_size"],
+                                    class_mode="input")
+            data = imagenet_imageGen(train_generator, validation_generator)
+            print(data.train_datagen)
+    else:
+        print("Using data from {}".format(args["use_other_data_name"]))
+        img = np.load("{}_data.npy".format(args["use_other_data_name"]))
+#labels = np.load("{}_data.npy".format(args["use_other_data_name"]))
+        if args["dataset"] == "mnist":
+            data = MNIST()
+        data = general_data(img, labels, data)
+
+
     print("Done...")
 
     print("Start training autoencoder")
@@ -374,6 +394,7 @@ if __name__ == "__main__":
     parser.add_argument("--train_on_test", action="store_true", help="use only testing data to train the autoencoder")
     parser.add_argument("--train_on_test_ratio", type=float, default=0.99, help="the ratio of testing data to train the autoencoder; only used when train_on_test is set")
     parser.add_argument("--augment_data", action="store_true", help="apply image augmentation on mnist dataset")
+    parser.add_argument("--use_other_data_name", help="the outter data used for build autoencoder")
     args = vars(parser.parse_args())
     if not os.path.isdir("model"):
         print("Folder for saving models does not exist. The folder is created.")

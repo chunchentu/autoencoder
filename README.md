@@ -52,7 +52,7 @@ tar and put the imgs folder in ../imagenetdata. This path can be changed in setu
 python3 separate_imagenet.py --img_directory "../imagenetdata/imgs"
 ```
 
-This would randomly separate the data in `--mg_directory` into training and testing dataset. The default ratio of the testing samples is set to 0.1. This ratio can be changed by providing addtional `--test_ratio` argument. An optional random seed argument `--seed` is also available for reproducibility.
+This would randomly separate the data in `--img_directory` into training and testing dataset. The default ratio of the testing samples is set to 0.1. This ratio can be changed by providing addtional `--test_ratio` argument. An optional random seed argument `--seed` is also available for reproducibility.
 
 Two text files `train_file_list.txt` and `test_file_list.txt` would be generated listing all the files in the training and testing dataset.
 
@@ -95,7 +95,18 @@ For cifar10
 python3 train_autoencoder.py --dataset cifar10 --compress_mode 1 --save_prefix aug_cifar10 --batch_size 1000 --epochs 1000 --train_on_test --augment_data
 ```
 
+# Building autoencoder using other data source
+
+The option `--use_other_data_name` allows users to build autoencoder using other data from current folder. Currently, this option only supports mnist dataset. Data should be store in `.npy` format (saved by `numpy` package) and with postfix `_data.npy`. For example, to use the data named `mnist8m_data.npy` you can
+
+```bash
+python3 train_autoencoder.py --dataset mnist --compress_mode 1 --save_prefix 8m_mnist --batch_size 5000 --epochs 5000 --use_other_data_name mnist8m
+```
+
+
 # Update history
+
+- Update 12/16/2017: Add options for building autoencoder using other data source
 
 - Update 12/15/2017: Add augmentation for mnist and cifar10.
 
