@@ -52,7 +52,7 @@ tar and put the imgs folder in ../imagenetdata. This path can be changed in setu
 python3 separate_imagenet.py --img_directory "../imagenetdata/imgs"
 ```
 
-This would randomly separate the data in `--img_directory` into training and testing dataset. The default ratio of the testing samples is set to 0.1. This ratio can be changed by providing addtional `--test_ratio` argument. An optional random seed argument `--seed` is also available for reproducibility.
+This would randomly separate the data in `--img_directory` into training and testing dataset. The default ratio of the testing samples is set to 0.1. This ratio can be changed by providing addtional `--test_ratio` argument. An optional random seed argument `--seed` is also available for reproducibility.
 
 Two text files `train_file_list.txt` and `test_file_list.txt` would be generated listing all the files in the training and testing dataset.
 
