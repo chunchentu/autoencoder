@@ -10,6 +10,7 @@ from keras.optimizers import SGD
 from setup_mnist import MNIST
 from setup_cifar import CIFAR
 from setup_inception import ImageNet
+from setup_facial import FACIAL
 import tensorflow as tf
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 
@@ -39,30 +40,35 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
             train_index = random_index[:trainNum]
             test_index = random_index[trainNum:]
 
+            print("Original data information:")
+            print("Train shape:{}".format(data.train_data.shape))
+            print("Test shape:{}".format(data.test_data.shape))
+            print("Validation shape:{}".format(data.validation_data.shape))
+
             x_train = data.test_data[train_index]
-            x_train = np.concatenate( (x_train, np.zeros([5000, imgH, imgW, numChannels])), axis=0)
+            #x_train = np.concatenate( (x_train, np.zeros([5000, imgH, imgW, numChannels])), axis=0)
             x_train = np.concatenate( (x_train, data.validation_data))
             y_train = x_train
 
             x_test = data.test_data[test_index]
             y_test = x_test
 
-            trainNum = data.test_data.shape[0]
+            trainNum = x_train.shape[0]
             if augment_data:
                 # currently works on mnist
                 # mnist is in the range of -0.5 ~ 0.5
                 # don't need to rescale it
                 print("Augmenting data with image generator")
-                train_datagen = ImageDataGenerator(
-                            width_shift_range=0.8,
-                            height_shift_range=0.8,
-                            shear_range=0.8,
-                            zoom_range=0.8,
+                datagen = ImageDataGenerator(
+                            width_shift_range=0.1,
+                            height_shift_range=0.1,
+                            shear_range=0.1,
+                            zoom_range=0.1,
                             horizontal_flip=True,
-                            vertical_flip=True,
+                            vertical_flip=False,
                             fill_mode='nearest')
                 #train_generator = train_datagen.fit(x_train)  
-
+                datagen.fit(x_train)
         else:
             trainNum, imgH, imgW, numChannels = data.train_data.shape
             x_train = data.train_data
@@ -137,30 +143,40 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     #else:
     #    encoder_model.add(Activation('relu'))
 
-    if compressMode == 2:
-        if train_imagenet:
-            encoder_model.add(MaxPooling2D(
-                pool_size=4,
-                strides=4,
-                padding='same',  # Padding method
-                data_format='channels_last',
-                ))
+    if compressMode >= 2:
+        if use_tanh:
+            encoder_model.add(Activation('tanh'))
         else:
-            # Pooling layer (max pooling) output shape (imgH/4, imgW/4, numChannels)
-            encoder_model.add(MaxPooling2D(
-                pool_size=2,
-                strides=2,
-                padding='same',  # Padding method
-                data_format='channels_last',
-            ))
+            encoder_model.add(Activation('relu'))
+
+        # Pooling layer (max pooling) output shape (imgH/4, imgW/4, numChannels)
+        encoder_model.add(MaxPooling2D(
+            pool_size=2,
+            strides=2,
+            padding='same',  # Padding method
+            data_format='channels_last',
+        ))
+
+        # Conv layer output shape (imgH/4, imgW/4, numChannels)
+        encoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
+        BatchNormalization(axis=3)
+
+    if compressMode >= 3:
+        if use_tanh:
+            encoder_model.add(Activation('tanh'))
+        else:
+            encoder_model.add(Activation('relu'))
+        # Pooling layer (max pooling) output shape (imgH/8, imgW/8, numChannels)
+        encoder_model.add(MaxPooling2D(
+            pool_size=2,
+            strides=2,
+            padding='same',  # Padding method
+            data_format='channels_last',
+        ))
 
         # Conv layer 3 output shape (imgH/4, imgW/4, numChannels)
         encoder_model.add(Convolution2D(numChannels, 3, strides=1, padding='same', data_format='channels_last'))
         BatchNormalization(axis=3)
-        #if use_tanh:
-        #    encoder_model.add(Activation('tanh'))
-        #else:
-        #    encoder_model.add(Activation('relu'))
 
 
     # end of encoding
@@ -171,8 +187,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
     decoder_model.add(encoder_model)
 
-    if compressMode == 2:
-        # Conv layer output shape (imgH/4, imgW/4, 16)
+    if compressMode >= 3:
         decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
         BatchNormalization(axis=3)
         if use_tanh:
@@ -180,13 +195,21 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
         else:
             decoder_model.add(Activation('relu'))
 
-        if train_imagenet:
-            decoder_model.add(UpSampling2D((4, 4), data_format='channels_last'))
-        else:
-            # Upsampling layer  output shape (imgH/2, imgW/2, 16)
-            decoder_model.add(UpSampling2D((2, 2), data_format='channels_last'))
+        # Upsampling layer  output shape (imgH/8, imgW/8, 16)
+        decoder_model.add(UpSampling2D((2, 2), data_format='channels_last'))
 
-    # Conv layer output shape (imgH/2, imgW/2, 16)
+    if compressMode >= 2:
+        decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
+        BatchNormalization(axis=3)
+        if use_tanh:
+            decoder_model.add(Activation('tanh'))
+        else:
+            decoder_model.add(Activation('relu'))
+
+        # Upsampling layer  output shape (imgH/4, imgW/4, 16)
+        decoder_model.add(UpSampling2D((2, 2), data_format='channels_last'))
+
+
     decoder_model.add(Convolution2D(16, 3, strides=1, padding='same', data_format='channels_last'))
     BatchNormalization(axis=3)
     if use_tanh:
@@ -259,18 +282,11 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
             # custom generator
 
-            def generate_data(data_generator, batch_size):
-                while True:
-                    x_batch, _ = next(data_generator.flow(x_train, y_train, batch_size=batch_size))
-                    yield (x_batch, x_batch)
-
-            decoder_model.fit_generator(
-                    generate_data(train_datagen, batch_size),
-                    steps_per_epoch= trainNum//batch_size,
-                    epochs=epochs,
-                    validation_data=(x_test, y_test),
-                    validation_steps=testNum,
-                    callbacks = [checkpointer])
+            decoder_model.fit_generator(datagen.flow(x_train, y_train, batch_size=batch_size),
+                          steps_per_epoch=x_train.shape[0] // batch_size,
+                          validation_data=(x_test, y_test),
+                          epochs=args["epochs"],
+                          callbacks=[checkpointer])
 
 
         else:
@@ -287,7 +303,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
         decoder_model.fit_generator(
                     train_datagen,
-                    steps_per_epoch= 50,
+                    steps_per_epoch= 100,
                     epochs=epochs,
                     validation_data=test_datagen,
                     validation_steps=100,
@@ -334,27 +350,34 @@ def main(args):
             data = MNIST()
         elif args["dataset"] == "cifar10":
             data = CIFAR()
+        elif args["dataset"] == "fe":
+            data = FACIAL()
         elif args["dataset"] == "imagenet":
             # the following code is the old function for loading imagenet data
             # data = ImageNet(datasetSize=args["imagenet_data_size"], testRatio=0.1)
             
             # new version uses ImageDataGenerator provided by Keras
+            def normalize_img(x):
+                return x/255-0.5
             train_datagen = ImageDataGenerator(
-                                rescale=1./255,
+                                #rescale=1./255,
+                                preprocessing_function=normalize_img,
                                 shear_range=0.2,
                                 zoom_range=0.2,
+                                width_shift_range=0.3,
+                                height_shift_range=0.3,
                                 horizontal_flip=True,
                                 fill_mode='nearest')
-            test_datagen = ImageDataGenerator(rescale=1./255)
+            test_datagen = ImageDataGenerator(preprocessing_function=normalize_img)
             train_generator = train_datagen.flow_from_directory(
-                                    "../imagenetdata/train_dir",
+                                    "/dccstor/bigdata/imgnet_class10/train_data/imgs_process",
                                     target_size=(299, 299),  
                                     batch_size=args["batch_size"],
                                     class_mode="input")  
 
             # this is a similar generator, for validation data
             validation_generator = test_datagen.flow_from_directory(
-                                    "../imagenetdata/test_dir",
+                                    "/dccstor/bigdata/imgnet_class10/test_dir",
                                     target_size=(299, 299),
                                     batch_size=args["batch_size"],
                                     class_mode="input")
@@ -363,7 +386,7 @@ def main(args):
     else:
         print("Using data from {}".format(args["use_other_data_name"]))
         img = np.load("{}_data.npy".format(args["use_other_data_name"]))
-#labels = np.load("{}_data.npy".format(args["use_other_data_name"]))
+        labels = np.load("{}_data.npy".format(args["use_other_data_name"]))
         if args["dataset"] == "mnist":
             data = MNIST()
         data = general_data(img, labels, data)
@@ -381,9 +404,9 @@ def main(args):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--dataset", choices=["mnist", "cifar10", "imagenet"], default="mnist", help="the dataset to train")
+    parser.add_argument("-d", "--dataset", choices=["mnist", "cifar10", "imagenet", "fe"], default="mnist", help="the dataset to train")
     parser.add_argument("--save_prefix", default="codec", help="prefix of file name to save trained model/weights under model folder")
-    parser.add_argument("--compress_mode", type=int, choices=[1, 2], default=1, help="the compress mode, 1:25% 2:6.25%")
+    parser.add_argument("--compress_mode", type=int, choices=[1, 2, 3], default=1, help="the compress mode, 1:1/4 2:1/16, 3:1/64")
     parser.add_argument("--batch_size", default=1000, type=int, help="the batch size when training autoencoder")
     parser.add_argument("--epochs", default=1000, type=int, help="the number of training epochs")
     parser.add_argument("--seed", type=int, default=9487)
