@@ -35,6 +35,16 @@ python3 train_autoencoder.py --dataset cifar10 --compress_mode 2 --save_prefix c
 
 Arguments are the same as mnist
 
+# Facial expression
+
+The data can be downloaded from [here](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/data)
+
+An example to train the autoencoder:
+```bash
+python3 train_autoencoder.py --dataset fe --compress_mode 2 --save_prefix fe --batch_size 1000 --epochs 1000
+```
+
+
 
 # ImageNet
 
