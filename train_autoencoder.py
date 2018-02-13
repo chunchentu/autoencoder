@@ -266,6 +266,7 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
     decoder_model_filename = saveFilePrefix + "decoder.json"
     encoder_weight_filename = saveFilePrefix + "encoder.h5"
     decoder_weight_filename = saveFilePrefix + "decoder.h5"
+    print(decoder_weight_filename)
     if os.path.exists(decoder_weight_filename):
         print("Load the pre-trained model.")
         decoder_model.load_weights(decoder_weight_filename)
@@ -370,7 +371,7 @@ def main(args):
                                 fill_mode='nearest')
             test_datagen = ImageDataGenerator(preprocessing_function=normalize_img)
             train_generator = train_datagen.flow_from_directory(
-                                    "/dccstor/bigdata/imgnet_class10/train_data/imgs_process",
+                                    "/dccstor/bigdata/imgnet_class10/test_dir",
                                     target_size=(299, 299),  
                                     batch_size=args["batch_size"],
                                     class_mode="input")  
