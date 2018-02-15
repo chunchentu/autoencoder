@@ -26,8 +26,6 @@ def train(data, compressMode=1, batch_size=1000, epochs=1000, saveFilePrefix=Non
 
     """
 
-    # data.train_data may have different definition of the shape, need to check
-    # for MNIST and CIFAR
 
     
 
