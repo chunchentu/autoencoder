@@ -119,7 +119,7 @@ def main(args):
 
     print("Start training autoencoder")
     codec = CODEC(img_size=data_shape[1], num_channels=data_shape[3], 
-                compress_mode=args["compress_mode"], resize=resize)
+                compress_mode=args["compress_mode"], resize=resize, clip_value=args["clip_value"])
     train_autoencoder(data, codec,  batch_size=args["batch_size"], 
             epochs=args["epochs"], saveFilePrefix=args["save_prefix"], train_imagenet= (args["dataset"] == "imagenet") )
 
@@ -135,6 +135,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=9487)
     parser.add_argument("--imagenet_train_dir", default=None, help="The path to training data for imagenet")
     parser.add_argument("--imagenet_validation_dir", default=None, help="The path to validation data for imagenet")
+    parser.add_argument("--clip_value", default=0.5, type=float, help="The clipping value for the output of the decoder")
     # parser.add_argument("--train_imagenet", action='store_true', help = "the encoder for imagenet would be different")
     # parser.add_argument("--imagenet_data_size", type=int,  default=10000, help="the size of imagenet loaded for training, Max 50,000")
     # parser.add_argument("--use_tanh", action='store_true', help = "use tanh as activation function")
