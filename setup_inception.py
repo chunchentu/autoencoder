@@ -1,3 +1,4 @@
+## Modified by Chun-Chen Tu for setting up data generator for Kera
 ## Modified by Huan Zhang for the updated Inception-v3 model (inception_v3_2016_08_28.tar.gz)
 ## Modified by Nicholas Carlini to match model structure for attack code.
 ## Original copyright license follows.
@@ -46,6 +47,7 @@ import sys
 import random
 import tarfile
 import scipy.misc
+from keras.preprocessing.image import ImageDataGenerator
 
 import numpy as np
 from six.moves import urllib
@@ -348,7 +350,35 @@ class ImageNet:
       self.test_labels[0, temp_label] = 1
       print("Read target file {}".format(targetFile))
 
-  
+
+class ImageNetDataGen:
+  def __init__(self, train_dir, validate_dir, batch_size=100):
+    train_datagen = ImageDataGenerator(
+                        #rescale=1./255,
+                        preprocessing_function=lambda x: x/255-0.5,
+                        shear_range=0.2,
+                        zoom_range=0.2,
+                        width_shift_range=0.3,
+                        height_shift_range=0.3,
+                        horizontal_flip=True,
+                        fill_mode='nearest')
+    validation_datagen = ImageDataGenerator(preprocessing_function=lambda x: x/255-0.5)
+    train_generator_flow = train_datagen.flow_from_directory(
+                        train_dir,
+                        target_size=(299, 299),  
+                        batch_size=batch_size,
+                        class_mode="input")  
+
+    # this is a similar generator, for validation data
+    validation_generator_flow = validation_datagen.flow_from_directory(
+                                validate_dir,
+                                target_size=(299, 299),
+                                batch_size=batch_size,
+                                class_mode="input")
+    self.train_generator_flow = train_generator_flow
+    self.validation_generator_flow = validation_generator_flow
+
+
 
 
 if __name__ == '__main__':

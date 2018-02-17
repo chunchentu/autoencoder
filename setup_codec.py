@@ -13,7 +13,13 @@ class CODEC:
         working_img_size = img_size
 
         encoder_model = Sequential()
-        encoder_model.add(Convolution2D( 16, 3, strides=1,padding='same', input_shape=(img_size, img_size, num_channels)))
+        # resize input to a size easy for down-sampled
+        if resize:
+            encoder_model.add( Lambda(lambda image: tf.image.resize_images(image, (resize, resize)), 
+            input_shape=(img_size, img_size, num_channels)))
+        else:
+            encoder_model.add(Convolution2D( 16, 3, strides=1,padding='same', input_shape=(img_size, img_size, num_channels)))
+        
         encoder_model.add(Activation("relu"))
         encoder_model.add(MaxPooling2D(pool_size=2, strides=2, padding='same'))
         working_img_size //= 2
@@ -51,7 +57,7 @@ class CODEC:
         working_img_size *= 2
         decoder_model.add(Convolution2D(16, 3, strides=1, padding='same'))
         decoder_model.add(Activation("relu"))
-        decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (working_img_size, working_img_size))))
+        decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (img_size, img_size))))
 
 
         decoder_model.add(Convolution2D(num_channels, 3, strides=1, padding='same'))
