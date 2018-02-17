@@ -1,5 +1,5 @@
 # autoencoder
-Trina the Convolutional AutoEncoder (CAE).
+Train the Convolutional AutoEncoder (CAE).
 
 # Required packages
 ``` bash
