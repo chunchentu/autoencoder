@@ -1,4 +1,5 @@
 # autoencoder
+Trina the Convolutional AutoEncoder (CAE).
 
 # Required packages
 ``` bash
@@ -13,24 +14,22 @@ Check if the keras is using tensorflow backend, if not, modify ~/.keras/keras.js
 To train the autoencoder on mnist dataset:
 
 ```bash
-python3 train_autoencoder.py --dataset mnist --compress_mode 2 --save_prefix mnist --batch_size 1000 --epochs 1000
+python3 train_CAE.py --dataset mnist --compress_mode 1 --save_prefix mnist --batch_size 1000 --epochs 1000
 ```
 
 Several arguments:
 
-- dataset: You can choose between **mnist** and **cifar10**
+- dataset: You can choose between **mnist**, **cifar10**, ***fe* and ***imagenet*
 
-- compress_mode: Either 1 or 2, if set to 1, data is compressed to 25%; if set to 2, data is set to 6.25%
+- compress_mode: Either 1, 2 or 3 if set to 1, data is compressed to 25%; if set to 2, data is set to 6.25% and if set to 3, data is set to 1.5%. Please make sure the original image size is large enough. 
 
-- save_model: The file name to save the model. The autoencoder would be saved under "model" folder
-
-- save_ckpt: The file name to save the checkpoint. The checkpoint file would be saved under "model" folder
+- save_prefix: The prefix of file name to save the model. The autoencoder would be saved under "codec" folder. Checkpoint file would be saved under "codec" folder with the *.ckpt* extension.
 
 # CIFAR10
 To train the autoencoder on cifar10 dataset:
 
 ```bash
-python3 train_autoencoder.py --dataset cifar10 --compress_mode 2 --save_prefix cifar10 --batch_size 1000 --epochs 1000
+python3 train_CAE.py --dataset cifar10 --compress_mode 2 --save_prefix cifar10 --batch_size 1000 --epochs 1000
 ```
 
 Arguments are the same as mnist
@@ -41,7 +40,7 @@ The data can be downloaded from [here](https://www.kaggle.com/c/challenges-in-re
 
 An example to train the autoencoder:
 ```bash
-python3 train_autoencoder.py --dataset fe --compress_mode 2 --save_prefix fe --batch_size 1000 --epochs 1000
+python3 train_CAE.py --dataset fe --compress_mode 2 --save_prefix fe --batch_size 1000 --epochs 1000
 ```
 
 
@@ -54,7 +53,7 @@ To prepare the ImageNet dataset, download the file from the following link
 
 [ImageNet test data](http://jaina.cs.ucdavis.edu/datasets/adv/imagenet/img.tar.gz)
 
-tar and put the imgs folder in ../imagenetdata. This path can be changed in setup_inception.py.
+untar and put the imgs folder in ../imagenetdata. This path can be changed in setup_inception.py.
 
 ## Split the dataset into testing and training
 
@@ -73,48 +72,15 @@ When executing this python script, you would be asked if you wish the script to 
 To train the autoencoder using the following commands:
 
 ```bash
-python3 train_autoencoder.py --dataset imagenet --compress_mode 2 --save_prefix imagenet --batch_size 100 --epochs 100 --use_tanh --train_imagenet
+python3 train_CAE.py --dataset imagenet --compress_mode 2 --save_prefix imagenet --batch_size 100 --epochs 100 --imagenet_train_dir ../imagenetdata/train_dir --imagenet_validation_dir ../imagenetdata/test_dir
 ```
-This would load and traingin data in `../imagenetdata/train_dir` and `../imagenetdata/test_dir` for training.
+This would load and traingin data in `../imagenetdata/train_dir` and `../imagenetdata/test_dir` for training and validation.
 
-# Building autoencoder on the testing dataset
-
-Under some situation (e.g. blackbox attack), it is assumed users have no access to the training data. This can be done by setting `--train_on_test` and specify the ratio of splitting the testing data through `--train_on_test_ratio` (default 0.99)
-
-For mnist
-
-```bash
-python3 train_autoencoder.py --dataset mnist --compress_mode 1 --save_prefix test_mnist --batch_size 5000 --epochs 10000 --train_on_test
-```
-
-For cifar10
-
-```bash
-python3 train_autoencoder.py --dataset cifar10 --compress_mode 1 --save_prefix test_cifar10 --batch_size 5000 --epochs 10000 --train_on_test
-```
-
-The size of the test dataset could be insufficient to train the model. We can do the image augmentation by turning on the option `--augment_data`.
-
-For mnist
-```bash
-python3 train_autoencoder.py --dataset mnist --compress_mode 1 --save_prefix aug_mnist --batch_size 1000 --epochs 1000 --train_on_test --augment_data
-```
-
-For cifar10
-```bash
-python3 train_autoencoder.py --dataset cifar10 --compress_mode 1 --save_prefix aug_cifar10 --batch_size 1000 --epochs 1000 --train_on_test --augment_data
-```
-
-# Building autoencoder using other data source
-
-The option `--use_other_data_name` allows users to build autoencoder using other data from current folder. Currently, this option only supports mnist dataset. Data should be store in `.npy` format (saved by `numpy` package) and with postfix `_data.npy`. For example, to use the data named `mnist8m_data.npy` you can
-
-```bash
-python3 train_autoencoder.py --dataset mnist --compress_mode 1 --save_prefix 8m_mnist --batch_size 5000 --epochs 5000 --use_other_data_name mnist8m
-```
 
 
 # Update history
+
+- Update 12/17/2018: Change code structure.
 
 - Update 12/16/2017: Add options for building autoencoder using other data source
 
