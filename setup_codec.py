@@ -7,24 +7,57 @@ import tensorflow as tf
 import os
 
 class CODEC:
-    def __init__(self, img_size, num_channels, compress_mode=1, clip_value=0.5):
+    def __init__(self, img_size, num_channels, compress_mode=1, clip_value=0.5, resize=None):
 
         self.compress_mode = compress_mode
+        working_img_size = img_size
 
         encoder_model = Sequential()
         encoder_model.add(Convolution2D( 16, 3, strides=1,padding='same', input_shape=(img_size, img_size, num_channels)))
         encoder_model.add(Activation("relu"))
         encoder_model.add(MaxPooling2D(pool_size=2, strides=2, padding='same'))
+        working_img_size //= 2
+
+        if compress_mode >=2:
+            encoder_model.add(Convolution2D( 16, 3, strides=1,padding='same'))
+            encoder_model.add(Activation("relu"))
+            encoder_model.add(MaxPooling2D(pool_size=2, strides=2, padding='same'))
+            working_img_size //= 2
+
+        if compress_mode >=3:
+            encoder_model.add(Convolution2D( 16, 3, strides=1,padding='same'))
+            encoder_model.add(Activation("relu"))
+            encoder_model.add(MaxPooling2D(pool_size=2, strides=2, padding='same'))
+            working_img_size //= 2
+
         encoder_model.add(Convolution2D(num_channels, 3, strides=1, padding='same'))
 
         decoder_model = Sequential()
         decoder_model.add(encoder_model)
-        decoder_model.add(Convolution2D(16, 3, strides=1, padding='same'))
-        decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (img_size, img_size))))
+
+        if compress_mode >=3:
+            working_img_size *= 2
+            decoder_model.add(Convolution2D(16, 3, strides=1, padding='same'))
+            decoder_model.add(Activation("relu"))
+            decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (working_img_size, working_img_size))))
+
+        if compress_mode >=2:
+            working_img_size *= 2
+            decoder_model.add(Convolution2D(16, 3, strides=1, padding='same'))
+            decoder_model.add(Activation("relu"))
+            decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (working_img_size, working_img_size))))
+
+
+        working_img_size *= 2
         decoder_model.add(Convolution2D(16, 3, strides=1, padding='same'))
         decoder_model.add(Activation("relu"))
+        decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (working_img_size, working_img_size))))
+
+
         decoder_model.add(Convolution2D(num_channels, 3, strides=1, padding='same'))
-        decoder_model.add(Lambda(lambda image: tf.clip_by_value(image, -clip_value, clip_value)))
+        decoder_model.add(Lambda(lambda image: K.clip(image, -clip_value, clip_value) ))
+
+
         print('Encoder model:')
         encoder_model.summary()
 
