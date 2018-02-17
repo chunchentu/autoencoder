@@ -14,7 +14,7 @@ Check if the keras is using tensorflow backend, if not, modify ~/.keras/keras.js
 To train the autoencoder on mnist dataset:
 
 ```bash
-python3 train_CAE.py --dataset mnist --compress_mode 1 --save_prefix mnist --batch_size 1000 --epochs 1000
+python3 train_CAE.py --dataset mnist --compress_mode 1 --save_prefix mnist --batch_size 1000 --epochs 1000 --clip_value 0.5
 ```
 
 Several arguments:
@@ -24,6 +24,8 @@ Several arguments:
 - compress_mode: Either 1, 2 or 3 if set to 1, data is compressed to 25%; if set to 2, data is set to 6.25% and if set to 3, data is set to 1.5%. Please make sure the original image size is large enough. 
 
 - save_prefix: The prefix of file name to save the model. The autoencoder would be saved under "codec" folder. Checkpoint file would be saved under "codec" folder with the *.ckpt* extension.
+
+- clip_value: Clip the output so to make sure output values lie in [-*clip_value*, *clip_value*].
 
 # CIFAR10
 To train the autoencoder on cifar10 dataset:
@@ -80,7 +82,7 @@ This would load and traingin data in `../imagenetdata/train_dir` and `../imagene
 
 # Update history
 
-- Update 12/17/2018: Change code structure.
+- Update 02/17/2018: Change code structure.
 
 - Update 12/16/2017: Add options for building autoencoder using other data source
 
