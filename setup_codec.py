@@ -80,29 +80,30 @@ class CODEC:
 
         if not os.path.isfile(encoder_weight_filename):
             raise Exception("The file for encoder weights does not exist:{}".format(encoder_weight_filename))
-        self.encoder_model.load_weights(encoder_weight_filename)
+        self.encoder.load_weights(encoder_weight_filename)
 
         if not os.path.isfile(decoder_weight_filename):
             raise Exception("The file for decoder weights does not exist:{}".format(decoder_weight_filename))
-        decoder_temp.load_weights(decoder_weight_filename)
+        self.decoder.load_weights(decoder_weight_filename)
 
         print("Encoder summaries")
         self.encoder.summary()
 
-        _, encode_H, encode_W, numChannels = encoder.output_shape
-        config = decoder_temp.get_config()
+        _, encode_H, encode_W, numChannels = self.encoder.output_shape
+        config = self.decoder.get_config()
         config2 = config[1::]
         config2[0]['config']['batch_input_shape'] = (None, encode_H, encode_W, numChannels)
-        self.decoder = Sequential.from_config(config2, custom_objects={"tf": tf})
+        decoder_temp = Sequential.from_config(config2, custom_objects={"tf": tf})
 
         # set weights
         cnt = -1
-        for l in decoder_temp.layers:
+        for l in self.decoder.layers:
             cnt += 1
             if cnt == 0:
                 continue
             weights = l.get_weights()
-            decoder.layers[cnt - 1].set_weights(weights)
+            decoder_temp.layers[cnt - 1].set_weights(weights)
 
+        self.decoder = decoder_temp
         print("Decoder summaries")
         self.decoder.summary()
