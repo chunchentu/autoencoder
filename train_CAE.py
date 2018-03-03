@@ -35,10 +35,14 @@ def train_autoencoder(data, codec, batch_size=1000, epochs=1000, saveFilePrefix=
     encoder_weight_filename = saveFilePrefix + "encoder.h5"
     decoder_weight_filename = saveFilePrefix + "decoder.h5"
 
+    
+
     if os.path.exists(decoder_weight_filename):
         print("Load the pre-trained model.")
         codec.decoder.load_weights(decoder_weight_filename)
-
+    elif os.path.exists(ckptFileName):
+        print("Load the previous checkpoint")
+        codec.decoder.load_weights(ckptFileName)
 
     sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     codec.decoder.compile(loss='mse', optimizer=sgd)
@@ -100,6 +104,14 @@ def main(args):
     print("Loading data", args["dataset"])
     if args["dataset"] == "mnist":
         data = MNIST()
+        if args["train_data_source"]:
+            print("Using data from {}".format(args["train_data_source"]))
+            img = np.load("{}_data.npy".format(args["train_data_source"]))
+            labels = np.load("{}_data.npy".format(args["train_data_source"]))
+            data.validation_data = img
+            data.validation_labels = labels
+
+
     elif args["dataset"] == "cifar10":
         data = CIFAR()
     elif args["dataset"] == "fe":
@@ -136,6 +148,7 @@ if __name__ == "__main__":
     parser.add_argument("--imagenet_train_dir", default=None, help="The path to training data for imagenet")
     parser.add_argument("--imagenet_validation_dir", default=None, help="The path to validation data for imagenet")
     parser.add_argument("--clip_value", default=0.5, type=float, help="The clipping value for the output of the decoder")
+    parser.add_argument("--train_data_source", help="the training data other than the default dataset, MNIST only")
     # parser.add_argument("--train_imagenet", action='store_true', help = "the encoder for imagenet would be different")
     # parser.add_argument("--imagenet_data_size", type=int,  default=10000, help="the size of imagenet loaded for training, Max 50,000")
     # parser.add_argument("--use_tanh", action='store_true', help = "use tanh as activation function")
@@ -143,7 +156,7 @@ if __name__ == "__main__":
     # parser.add_argument("--train_on_test", action="store_true", help="use only testing data to train the autoencoder")
     # parser.add_argument("--train_on_test_ratio", type=float, default=0.99, help="the ratio of testing data to train the autoencoder; only used when train_on_test is set")
     # parser.add_argument("--augment_data", action="store_true", help="apply image augmentation on mnist dataset")
-    # parser.add_argument("--use_other_data_name", help="the outter data used for build autoencoder")
+    
     args = vars(parser.parse_args())
     if not os.path.isdir("codec"):
         print("Folder for saving models does not exist. The folder is created.")
