@@ -1,14 +1,14 @@
 import numpy as np
 import random
-from keras.models import Sequential
-from keras.layers import Activation, Convolution2D, MaxPooling2D, Lambda, Input
-from keras.callbacks import ModelCheckpoint
-from keras.optimizers import SGD
-from keras import backend as K
+from tensorflow.contrib.keras.api.keras.models import Sequential
+from tensorflow.contrib.keras.api.keras.layers import Activation, Convolution2D, MaxPooling2D, Lambda, Input
+from tensorflow.contrib.keras.api.keras.callbacks import ModelCheckpoint
+from tensorflow.contrib.keras.api.keras.optimizers import SGD
+from tensorflow.contrib.keras.api.keras import backend as K
 from setup_mnist import MNIST
 from setup_cifar import CIFAR
 from setup_inception import ImageNet, ImageNetDataGen
-from setup_facial import FACIAL
+# from setup_facial import FACIAL
 from setup_codec import CODEC
 import tensorflow as tf
 import os
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=9487)
     parser.add_argument("--imagenet_train_dir", default=None, help="The path to training data for imagenet")
     parser.add_argument("--imagenet_validation_dir", default=None, help="The path to validation data for imagenet")
-    parser.add_argument("--clip_value", default=0.5, type=float, help="The clipping value for the output of the decoder")
+    parser.add_argument("--clip_value", default=1, type=float, help="The clipping value for the output of the decoder")
     parser.add_argument("--train_data_source", help="the training data other than the default dataset, MNIST only")
     # parser.add_argument("--train_imagenet", action='store_true', help = "the encoder for imagenet would be different")
     # parser.add_argument("--imagenet_data_size", type=int,  default=10000, help="the size of imagenet loaded for training, Max 50,000")

@@ -1,8 +1,9 @@
-from keras.models import Sequential
-from keras.layers import Activation, Convolution2D, MaxPooling2D, Lambda, Input
-from keras.callbacks import ModelCheckpoint
-from keras.optimizers import SGD
-from keras import backend as K
+from tensorflow.contrib.keras.api.keras.models import Sequential
+from tensorflow.contrib.keras.api.keras.layers import Activation, Convolution2D, MaxPooling2D, Lambda, Input
+from tensorflow.contrib.keras.api.keras.layers import BatchNormalization
+from tensorflow.contrib.keras.api.keras.callbacks import ModelCheckpoint
+from tensorflow.contrib.keras.api.keras.optimizers import SGD
+from tensorflow.contrib.keras.api.keras import backend as K
 import tensorflow as tf
 import os
 
@@ -20,42 +21,48 @@ class CODEC:
         else:
             encoder_model.add(Convolution2D( 16, 3, strides=1,padding='same', input_shape=(img_size, img_size, num_channels)))
         
+        BatchNormalization(axis=3)
         encoder_model.add(Activation("relu"))
         encoder_model.add(MaxPooling2D(pool_size=2, strides=2, padding='same'))
         working_img_size //= 2
 
         if compress_mode >=2:
             encoder_model.add(Convolution2D( 16, 3, strides=1,padding='same'))
+            BatchNormalization(axis=3)
             encoder_model.add(Activation("relu"))
             encoder_model.add(MaxPooling2D(pool_size=2, strides=2, padding='same'))
             working_img_size //= 2
 
         if compress_mode >=3:
             encoder_model.add(Convolution2D( 16, 3, strides=1,padding='same'))
+            BatchNormalization(axis=3)
             encoder_model.add(Activation("relu"))
             encoder_model.add(MaxPooling2D(pool_size=2, strides=2, padding='same'))
             working_img_size //= 2
 
         encoder_model.add(Convolution2D(num_channels, 3, strides=1, padding='same'))
-
+        BatchNormalization(axis=3)
         decoder_model = Sequential()
         decoder_model.add(encoder_model)
 
         if compress_mode >=3:
             working_img_size *= 2
             decoder_model.add(Convolution2D(16, 3, strides=1, padding='same'))
+            BatchNormalization(axis=3)
             decoder_model.add(Activation("relu"))
             decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (working_img_size, working_img_size))))
 
         if compress_mode >=2:
             working_img_size *= 2
             decoder_model.add(Convolution2D(16, 3, strides=1, padding='same'))
+            BatchNormalization(axis=3)
             decoder_model.add(Activation("relu"))
             decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (working_img_size, working_img_size))))
 
 
         working_img_size *= 2
         decoder_model.add(Convolution2D(16, 3, strides=1, padding='same'))
+        BatchNormalization(axis=3)
         decoder_model.add(Activation("relu"))
         decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (img_size, img_size))))
 
@@ -75,8 +82,8 @@ class CODEC:
 
 
     def load_codec(self, weights_prefix):
-        encoder_weight_filename = weights_prefix + "encoder.h5"
-        decoder_weight_filename = weights_prefix + "decoder.h5"
+        encoder_weight_filename = weights_prefix + "_encoder.h5"
+        decoder_weight_filename = weights_prefix + "_decoder.h5"
 
         if not os.path.isfile(encoder_weight_filename):
             raise Exception("The file for encoder weights does not exist:{}".format(encoder_weight_filename))

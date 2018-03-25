@@ -1,4 +1,3 @@
-## Modified by Chun-Chen Tu for setting up data generator for Kera
 ## Modified by Huan Zhang for the updated Inception-v3 model (inception_v3_2016_08_28.tar.gz)
 ## Modified by Nicholas Carlini to match model structure for attack code.
 ## Original copyright license follows.
@@ -47,8 +46,8 @@ import sys
 import random
 import tarfile
 import scipy.misc
-from keras.preprocessing.image import ImageDataGenerator
-
+import re
+from tensorflow.contrib.keras.api.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 from six.moves import urllib
 import tensorflow as tf
@@ -120,6 +119,7 @@ class NodeLookup(object):
 def create_graph():
   """Creates a graph from saved GraphDef file and returns a saver."""
   # Creates graph from saved graph_def.pb.
+  sys.argv = [sys.argv[0]]
   with tf.gfile.FastGFile(os.path.join(
     #  FLAGS.model_dir, 'classify_image_graph_def.pb'), 'rb') as f:
       FLAGS.model_dir, 'frozen_inception_v3.pb'), 'rb') as f:
@@ -180,10 +180,10 @@ def run_inference_on_image(image):
       print('%s (score = %.5f)' % (human_string, score))
 
 class InceptionModelPrediction:
-  def __init__(self, sess, use_log = False):
+  def __init__(self, sess, use_softmax = False):
     self.sess = sess
-    self.use_log = use_log
-    if self.use_log:
+    self.use_softmax = use_softmax
+    if self.use_softmax:
       output_name = 'InceptionV3/Predictions/Softmax:0'
     else:
       output_name = 'InceptionV3/Predictions/Reshape:0'
@@ -195,7 +195,10 @@ class InceptionModelPrediction:
   def predict(self, dat):
     dat = np.squeeze(dat)
     # scaled = (0.5 + dat) * 255
-    scaled = dat.reshape((1,) + dat.shape)
+    if len(dat.shape) < 4:
+      scaled = dat.reshape((1,) + dat.shape)
+    else:
+      scaled = dat
     # print(scaled.shape)
     predictions = self.sess.run(self.softmax_tensor,
                          {self.img: scaled})
@@ -217,17 +220,17 @@ class InceptionModel:
   image_size = 299
   num_labels = 1001
   num_channels = 3
-  def __init__(self, sess, use_log = False):
+  def __init__(self, sess, use_softmax = False):
     global CREATED_GRAPH
     self.sess = sess
-    self.use_log = use_log
+    self.use_softmax = use_softmax
     if not CREATED_GRAPH:
       create_graph()
       CREATED_GRAPH = True
-    self.model = InceptionModelPrediction(sess, use_log)
+    self.model = InceptionModelPrediction(sess, use_softmax)
 
   def predict(self, img):
-    if self.use_log:
+    if self.use_softmax:
       output_name = 'InceptionV3/Predictions/Softmax:0'
     else:
       output_name = 'InceptionV3/Predictions/Reshape:0'
@@ -291,8 +294,12 @@ def main(_):
       print('%s (score = %.5f)' % (human_string, score))
 
 
-def readimg(ff, force=False):
-  f = "../imagenetdata/imgs/"+ff
+def readimg(f, force=False):
+  #if f is None:
+  #  f = "../imagenetdata/imgs/"+ff
+  #else:
+  #  f = f+ff
+  FILENAME_RE = re.compile(r"(\d+).(\d+).jpg")
   img = scipy.misc.imread(f)
   # skip small images (image should be at least 299x299)
   if img.shape[0] < 299 or img.shape[1] < 299:
@@ -303,46 +310,66 @@ def readimg(ff, force=False):
     if img.shape != (299, 299, 3):
       return None
   else:
-    print("Force read {}".format(ff))
-  return [img, int(ff.split(".")[0])]
+    print("Force read {}".format(f))
+  filename_search = FILENAME_RE.search(f)
+
+  return [img, int(filename_search.group(1))]
 
 class ImageNet:
-  def __init__(self, datasetSize=10000, testRatio=0.1, targetFile=None, targetClass=None):
+  def __init__(self, data_path, targetFile=None, targetClass=None):
     # fix random number to generate training and testing set
     # fix last 5000 data as testing data
-    random.seed(5566)
-    from multiprocessing import Pool
-    pool = Pool(8)
-    file_list = sorted(os.listdir("../imagenetdata/imgs/"))
-    random.shuffle(file_list)
-
-    testNum = int(np.floor(datasetSize*testRatio))
-    trainNum = datasetSize - testNum
-    print("Train:{}, test:{}".format(trainNum, testNum))
-    r = pool.map(readimg, file_list[:trainNum])
-    r = [x for x in r if x != None]
-    trainNum = len(r)
-    print("Select {} training samples".format(trainNum))
-    temp_data, temp_labels = zip(*r)
-    temp_data = np.array(temp_data)
-    temp_labels = np.array(temp_labels)
-    self.train_data = temp_data
-    self.train_labels = np.zeros((trainNum, 1001))
-    self.train_labels[np.arange(trainNum), temp_labels] = 1
-
-
     if targetFile is None:
-      r = pool.map(readimg, file_list[-testNum:])
-      r = [x for x in r if x != None]
-      testNum = len(r)
-      print("Select {} testing samples".format(testNum))
-      temp_data, temp_labels = zip(*r)
-      temp_data = np.array(temp_data)
+      random.seed(5566)
+      from fnmatch import fnmatch
+
+      file_list = []
+
+      for path, subdirs, files in os.walk(data_path):
+        for name in files:
+          if fnmatch(name, "*.jpg"):
+            file_list.append(os.path.join(path,name))
+      #from multiprocessing import Pool
+      #pool = Pool(8)
+      
+      #print(file_list)
+      random.shuffle(file_list)
+      
+
+      FILENAME_RE = re.compile(r"(\d+).(\d+).jpg")
+      #r = pool.map(readimg, file_list)
+      #r = [x for x in r if x != None]
+      #data_num = len(r)
+      #print("Imagenet load # testing images:{}".format(data_num))
+      #temp_data, temp_labels = zip(*r)
+      #temp_data = np.array(temp_data)
+      #temp_labels = np.array(temp_labels)
+      temp_data = []
+      temp_labels = []
+      for f in file_list:
+        img = scipy.misc.imread(f)
+        if img.shape[0] < 299 or img.shape[1] < 299:
+          continue
+        img = np.array(scipy.misc.imresize(img,(299,299)),dtype=np.float32)/255-.5
+        if img.shape != (299, 299, 3):
+          continue
+        img = np.expand_dims(img, axis = 0)
+        #print("{}: shape:{}".format(f, img.shape))
+        temp_data.append(img)
+        filename_search = FILENAME_RE.search(f)
+        temp_labels.append(int(filename_search.group(1)))
+
+      data_num = len(temp_data)
+      print("Imagenet load # testing images:{}".format(data_num))
+      temp_data = np.concatenate(temp_data)
       temp_labels = np.array(temp_labels)
+      
       self.test_data = temp_data
-      self.test_labels = np.zeros((testNum, 1001))
-      self.test_labels[np.arange(testNum), temp_labels] = 1
+      self.test_labels = np.zeros((data_num, 1001))
+      self.test_labels[np.arange(data_num), temp_labels] = 1
+      
     else:
+      print("Target file:{}".format(targetFile))
       temp_data, temp_label = readimg(targetFile, force=True)
       self.test_data = np.array(temp_data)
       temp_label = np.array(temp_label)
@@ -350,7 +377,7 @@ class ImageNet:
       self.test_labels[0, temp_label] = 1
       print("Read target file {}".format(targetFile))
 
-
+  
 class ImageNetDataGen:
   def __init__(self, train_dir, validate_dir, batch_size=100):
     train_datagen = ImageDataGenerator(
@@ -377,9 +404,6 @@ class ImageNetDataGen:
                                 class_mode="input")
     self.train_generator_flow = train_generator_flow
     self.validation_generator_flow = validation_generator_flow
-
-
-
 
 if __name__ == '__main__':
   tf.app.run()
