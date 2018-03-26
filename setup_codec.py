@@ -22,21 +22,21 @@ class CODEC:
             encoder_model.add(Convolution2D( 16, 3, strides=1,padding='same', input_shape=(img_size, img_size, num_channels)))
         
         BatchNormalization(axis=3)
-        encoder_model.add(Activation("relu"))
+        encoder_model.add(Activation("tanh"))
         encoder_model.add(MaxPooling2D(pool_size=2, strides=2, padding='same'))
         working_img_size //= 2
 
         if compress_mode >=2:
             encoder_model.add(Convolution2D( 16, 3, strides=1,padding='same'))
             BatchNormalization(axis=3)
-            encoder_model.add(Activation("relu"))
+            encoder_model.add(Activation("tanh"))
             encoder_model.add(MaxPooling2D(pool_size=2, strides=2, padding='same'))
             working_img_size //= 2
 
         if compress_mode >=3:
             encoder_model.add(Convolution2D( 16, 3, strides=1,padding='same'))
             BatchNormalization(axis=3)
-            encoder_model.add(Activation("relu"))
+            encoder_model.add(Activation("tanh"))
             encoder_model.add(MaxPooling2D(pool_size=2, strides=2, padding='same'))
             working_img_size //= 2
 
@@ -49,21 +49,21 @@ class CODEC:
             working_img_size *= 2
             decoder_model.add(Convolution2D(16, 3, strides=1, padding='same'))
             BatchNormalization(axis=3)
-            decoder_model.add(Activation("relu"))
+            decoder_model.add(Activation("tanh"))
             decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (working_img_size, working_img_size))))
 
         if compress_mode >=2:
             working_img_size *= 2
             decoder_model.add(Convolution2D(16, 3, strides=1, padding='same'))
             BatchNormalization(axis=3)
-            decoder_model.add(Activation("relu"))
+            decoder_model.add(Activation("tanh"))
             decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (working_img_size, working_img_size))))
 
 
         working_img_size *= 2
         decoder_model.add(Convolution2D(16, 3, strides=1, padding='same'))
         BatchNormalization(axis=3)
-        decoder_model.add(Activation("relu"))
+        decoder_model.add(Activation("tanh"))
         decoder_model.add(Lambda(lambda image: tf.image.resize_images(image, (img_size, img_size))))
 
 
