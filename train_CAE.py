@@ -62,6 +62,11 @@ def train_autoencoder(data, codec, batch_size=1000, epochs=1000, saveFilePrefix=
     else: 
         # in-memory training
         x_train = data.validation_data
+        # add zeros for correction
+        x_train = np.concatenate((x_train, np.zeros((20000,)+ x_train.shape[1:])), axis=0)
+        x_train = np.concatenate((x_train, 0.5*np.ones((20000,)+ x_train.shape[1:])), axis=0)
+        x_train = np.concatenate((x_train, -0.5*np.ones((20000,)+ x_train.shape[1:])), axis=0)
+
         y_train = x_train
         x_test = data.test_data
         y_test = x_test
