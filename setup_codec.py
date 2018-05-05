@@ -8,7 +8,7 @@ import tensorflow as tf
 import os
 
 class CODEC:
-    def __init__(self, img_size, num_channels, compress_mode=1, clip_value=0.5, resize=None):
+    def __init__(self, img_size, num_channels, compress_mode=1, resize=None):
 
         self.compress_mode = compress_mode
         working_img_size = img_size

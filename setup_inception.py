@@ -379,8 +379,10 @@ class ImageNet:
 
   
 class ImageNetDataGen:
-  def __init__(self, train_dir, validate_dir, batch_size=100):
-    train_datagen = ImageDataGenerator(
+  def __init__(self, train_dir, validate_dir, batch_size=100, data_augmentation=True):
+    if data_augmentation:
+      print("Enable data augmentation")
+      train_datagen = ImageDataGenerator(
                         #rescale=1./255,
                         preprocessing_function=lambda x: x/255-0.5,
                         shear_range=0.2,
@@ -389,6 +391,9 @@ class ImageNetDataGen:
                         height_shift_range=0.3,
                         horizontal_flip=True,
                         fill_mode='nearest')
+    else:
+      print("Disable data augmentation")
+      train_datagen = ImageDataGenerator(preprocessing_function=lambda x: x/255-0.5)
     validation_datagen = ImageDataGenerator(preprocessing_function=lambda x: x/255-0.5)
     train_generator_flow = train_datagen.flow_from_directory(
                         train_dir,
